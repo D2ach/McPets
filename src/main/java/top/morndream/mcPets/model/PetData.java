@@ -333,13 +333,13 @@ public final class PetData {
         data.scaleTier = section.getInt("scale-tier", 1);
         data.baby = section.getBoolean("baby", false);
         data.particlePreset = section.getString("particle", "none");
-        data.mouthItem = section.getString("mouth", "none");
-        // 旧版「叼物」实际是头顶展示：无 float 字段时迁到悬浮物，叼物置空
+        // 叼物功能暂时关闭；旧 mouth 无 float 时迁到悬浮物
+        String legacyMouth = section.getString("mouth", "none");
+        data.mouthItem = "none";
         if (section.contains("float")) {
             data.floatItem = section.getString("float", "none");
-        } else if (section.contains("mouth") && !"none".equalsIgnoreCase(data.mouthItem)) {
-            data.floatItem = data.mouthItem;
-            data.mouthItem = "none";
+        } else if (legacyMouth != null && !"none".equalsIgnoreCase(legacyMouth)) {
+            data.floatItem = legacyMouth;
         } else {
             data.floatItem = "none";
         }

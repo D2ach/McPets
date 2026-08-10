@@ -21,7 +21,6 @@ items:
       - "<gray>体型: <aqua>{scale}</aqua></gray>"
       - "<gray>粒子: <aqua>{particle}</aqua></gray>"
       - "<gray>悬浮: <aqua>{float}</aqua></gray>"
-      - "<gray>叼物: <aqua>{mouth}</aqua></gray>"
     action: none
 
   state_follow:
@@ -125,17 +124,8 @@ items:
       - "<dark_gray>当前: {float}</dark_gray>"
     action: open_float
 
-  mouth:
-    slot: 41
-    material: BONE
-    name: "<white><bold>叼物</bold></white>"
-    lore:
-      - "<gray>嘴里叼着的物品</gray>"
-      - "<dark_gray>当前: {mouth}</dark_gray>"
-    action: open_mouth
-
   tpa:
-    slot: 42
+    slot: 41
     material: ENDER_PEARL
     name: "<dark_aqua><bold>传送到宠物</bold></dark_aqua>"
     lore:
@@ -143,7 +133,7 @@ items:
     action: tpa
 
   tph:
-    slot: 43
+    slot: 42
     material: CHORUS_FRUIT
     name: "<dark_purple><bold>宠物传到身边</bold></dark_purple>"
     lore:

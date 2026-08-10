@@ -35,7 +35,7 @@ Morndream 服务器的 **Paper / Folia** 宠物插件：把世界上几乎任意
 
 ### 管理 GUI
 - **Shift + 右键** 宠物，或 `/pet gui [名字]`
-- 切换状态、攻击、模式、AI、体型档位、幼体、粒子、悬浮物、叼物、传送
+- 切换状态、攻击、模式、AI、体型档位、幼体、粒子、悬浮物、传送
 - 界面物品不可被拿走；插件关闭时会先关闭所有 GUI
 - 每个页面独立配置：`plugins/McPets/gui/*.yml`
 
@@ -43,13 +43,13 @@ Morndream 服务器的 **Paper / Folia** 宠物插件：把世界上几乎任意
 - **体型**：Attribute 缩放三档（默认 0.5 / 1.0 / 2.0）+ 原版 baby（支持的生物）
 - **粒子**：内置预设；检测到 PlayerParticles 时走兼容通道
 - **悬浮物**：头顶上方装饰 ItemDisplay（可轻微浮动）
-- **叼物**：狐狸用主手；其他生物用嘴部偏移的 ItemDisplay（与悬浮物独立）
+- **叼物**：暂时关闭（后续重做）
 
 ### 持久化与存档安全
 - 单文件 `pets.yml`：主人/实体 UUID、开关、外观；并保存驯服前的**原版快照**
 - **不向区块写入插件 PDC / 自定义 NBT**；不写 `setTamed` / `setInvulnerable`
 - 插件运行时才套用名字、体型、幼体等；**卸载（park）或取消驯服时完整还原**原版状态
-- 叼物展示体 `setPersistent(false)`；狐狸手物在卸载时还原
+- 悬浮展示体 `setPersistent(false)`
 - 宠物**死亡** → 删档并提示主人；主人下线 → 实体仍留在世界
 - 实体丢失 → 默认静默清档（可配置提示）
 - **说明**：异常崩溃时，若区块已自动存盘，运行中外观可能短暂残留；正常 disable / `/pet delete` / 关服路径会还原
@@ -144,7 +144,6 @@ GUI 布局与按钮：`plugins/McPets/gui/`
 
 - `main.yml` — 宠物列表
 - `manage.yml` — 单宠管理
-- `mouth.yml` — 叼物选择
 - `float.yml` — 悬浮物选择
 
 文案支持 MiniMessage 渐变、`&` 颜色码与 `#RRGGBB`。

@@ -334,15 +334,6 @@ public final class PetService {
         }
     }
 
-    public void setMouth(PetData data, String mouthId) {
-        data.setMouthItem(mouthId);
-        LivingEntity entity = findEntity(data);
-        if (entity != null) {
-            SchedulerUtil.run(entity, plugin, () -> mouthService.apply(entity, data));
-        }
-        storage.markDirty();
-    }
-
     public void setFloatItem(PetData data, String floatId) {
         data.setFloatItem(floatId);
         LivingEntity entity = findEntity(data);
@@ -412,7 +403,6 @@ public final class PetService {
                     return;
                 }
                 snapshotLocation(data, entity);
-                mouthService.refreshPosition(entity, data);
                 floatItemService.refreshPosition(entity, data);
                 storage.markDirty();
             });
@@ -427,7 +417,7 @@ public final class PetService {
                 pendingMissingChecks.remove(data.getPetId());
                 SchedulerUtil.run(entity, plugin, () -> {
                     appearanceService.applyRuntime(entity, data);
-                    mouthService.apply(entity, data);
+                    disableMouth(data);
                     floatItemService.apply(entity, data);
                     if (plugin.getPetAIManager() != null) {
                         plugin.getPetAIManager().ensureStarted(data, entity);
@@ -514,7 +504,7 @@ public final class PetService {
         unloadWaitCounts.remove(data.getPetId());
         SchedulerUtil.run(entity, plugin, () -> {
             appearanceService.applyRuntime(entity, data);
-            mouthService.apply(entity, data);
+            disableMouth(data);
             floatItemService.apply(entity, data);
             if (plugin.getPetAIManager() != null) {
                 plugin.getPetAIManager().ensureStarted(data, entity);
@@ -571,7 +561,7 @@ public final class PetService {
         Runnable work = () -> {
             LegacyPdcCleaner.strip(plugin, entity);
             appearanceService.applyRuntime(entity, data);
-            mouthService.apply(entity, data);
+            disableMouth(data);
             floatItemService.apply(entity, data);
             if (entity instanceof Mob mob) {
                 mob.setAware(data.isAiEnabled());
@@ -673,5 +663,14 @@ public final class PetService {
 
     public PetStorage storage() {
         return storage;
+    }
+
+    /** 叼物功能暂时关闭：清残留展示并强制存档为 none。 */
+    private void disableMouth(PetData data) {
+        if (!"none".equalsIgnoreCase(data.getMouthItem())) {
+            data.setMouthItem("none");
+            storage.markDirty();
+        }
+        mouthService.clear(data);
     }
 }

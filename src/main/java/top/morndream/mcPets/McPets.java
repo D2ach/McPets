@@ -32,7 +32,6 @@ public final class McPets extends JavaPlugin {
         saveDefaultConfig();
         saveResource("gui/main.yml", false);
         saveResource("gui/manage.yml", false);
-        saveResource("gui/mouth.yml", false);
         saveResource("gui/float.yml", false);
 
         pluginConfig = new PluginConfig(this);

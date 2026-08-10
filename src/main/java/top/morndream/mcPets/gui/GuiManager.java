@@ -39,7 +39,7 @@ public final class GuiManager implements Listener {
 
     public void loadAll() {
         definitions.clear();
-        for (String id : List.of("main", "manage", "mouth", "float")) {
+        for (String id : List.of("main", "manage", "float")) {
             definitions.put(id, GuiDefinition.load(plugin, id));
         }
     }
@@ -78,17 +78,6 @@ public final class GuiManager implements Listener {
         openViewers.add(player.getUniqueId());
     }
 
-    public void openMouth(Player player, PetData data) {
-        GuiDefinition def = definitions.get("mouth");
-        Holder holder = new Holder("mouth", data.getPetId());
-        Inventory inv = def.create(holder, placeholders(data));
-        for (var e : def.buttons().entrySet()) {
-            inv.setItem(e.getKey(), def.renderButton(e.getValue(), placeholders(data)));
-        }
-        player.openInventory(inv);
-        openViewers.add(player.getUniqueId());
-    }
-
     public void openFloat(Player player, PetData data) {
         GuiDefinition def = definitions.get("float");
         Holder holder = new Holder("float", data.getPetId());
@@ -114,21 +103,6 @@ public final class GuiManager implements Listener {
             return;
         }
         openManage(player, data);
-    }
-
-    public void refreshMouth(Player player, PetData data) {
-        if (player.getOpenInventory().getTopInventory().getHolder() instanceof Holder holder
-                && "mouth".equals(holder.guiId())
-                && data.getPetId().equals(holder.petId())) {
-            GuiDefinition def = definitions.get("mouth");
-            Inventory inv = player.getOpenInventory().getTopInventory();
-            Map<String, String> ph = placeholders(data);
-            for (var e : def.buttons().entrySet()) {
-                inv.setItem(e.getKey(), def.renderButton(e.getValue(), ph));
-            }
-            return;
-        }
-        openMouth(player, data);
     }
 
     public void refreshFloat(Player player, PetData data) {
@@ -166,7 +140,6 @@ public final class GuiManager implements Listener {
         map.put("scale", String.valueOf(plugin.getPluginConfig().scaleValue(data.getScaleTier())));
         map.put("baby", data.isBaby() ? "是" : "否");
         map.put("particle", data.getParticlePreset());
-        map.put("mouth", data.getMouthItem());
         map.put("float", data.getFloatItem());
         return map;
     }
@@ -224,7 +197,7 @@ public final class GuiManager implements Listener {
         }
         PetData data = holder.petId() == null ? null : pets.storage().byPetId(holder.petId());
         if (action.equals("back")) {
-            if (("mouth".equals(holder.guiId()) || "float".equals(holder.guiId())) && data != null) {
+            if ("float".equals(holder.guiId()) && data != null) {
                 openManage(player, data);
             } else {
                 openMain(player);
@@ -324,7 +297,6 @@ public final class GuiManager implements Listener {
                 ));
                 refreshManage(player, data);
             }
-            case "open_mouth" -> openMouth(player, data);
             case "open_float" -> openFloat(player, data);
             case "tpa" -> {
                 if (pets.teleportPlayerToPet(player, data)) {
@@ -339,18 +311,6 @@ public final class GuiManager implements Listener {
                 } else {
                     messages.send(player, "pet-entity-missing");
                 }
-            }
-            case "mouth_none" -> {
-                pets.setMouth(data, "none");
-                messages.send(player, "mouth-changed", Map.of("name", data.getInternalName(), "item", "无"));
-                refreshMouth(player, data);
-            }
-            case "mouth_bone", "mouth_stick", "mouth_rose", "mouth_porkchop",
-                 "mouth_diamond", "mouth_sword", "mouth_apple", "mouth_cookie" -> {
-                String id = action.substring("mouth_".length());
-                pets.setMouth(data, id);
-                messages.send(player, "mouth-changed", Map.of("name", data.getInternalName(), "item", id));
-                refreshMouth(player, data);
             }
             case "float_none" -> {
                 pets.setFloatItem(data, "none");
