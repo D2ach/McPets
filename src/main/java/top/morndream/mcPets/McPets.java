@@ -30,6 +30,7 @@ public final class McPets extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        saveResource("messages.yml", false);
         saveResource("gui/main.yml", false);
         saveResource("gui/manage.yml", false);
         saveResource("gui/float.yml", false);

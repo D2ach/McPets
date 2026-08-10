@@ -113,7 +113,8 @@ mvn clean package
 
 ## 配置说明
 
-主配置：`plugins/McPets/config.yml`
+主配置：`plugins/McPets/config.yml`  
+文案：`plugins/McPets/messages.yml`（`/pet reload` 一并重载）
 
 常用项：
 
@@ -146,7 +147,7 @@ GUI 布局与按钮：`plugins/McPets/gui/`
 - `manage.yml` — 单宠管理
 - `float.yml` — 悬浮物选择
 
-文案支持 MiniMessage 渐变、`&` 颜色码与 `#RRGGBB`。
+文案在 `messages.yml`，支持 MiniMessage 渐变、`&` 颜色码与 `#RRGGBB`。
 
 ---
 

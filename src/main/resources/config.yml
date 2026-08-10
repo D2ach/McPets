@@ -1,4 +1,5 @@
 # McPets 主配置 —— 几乎所有数值都可在此调整
+# By Xin_Yu_Han
 
 settings:
   # 驯服准星最大距离
@@ -104,57 +105,3 @@ particles:
       particle: HAPPY_VILLAGER
       count: 4
       offset: 0.4
-
-messages:
-  prefix: "<gradient:#7EE8FA:#80FF72><bold>McPets</bold></gradient> <dark_gray>»</dark_gray> "
-  no-permission: "<red>你没有权限这样做。</red>"
-  player-only: "<red>该指令仅限玩家使用。</red>"
-  unknown-command: "<gray>未知子指令。输入 <aqua>/pet help</aqua> 查看帮助。</gray>"
-  tame-success: "<green>已驯服</green> <white>{name}</white> <gray>({type})</gray><green>！</green>"
-  tame-no-target: "<red>准星前方没有可驯服的生物。</red>"
-  tame-blacklisted: "<red>该生物类型在黑名单中，无法驯服。</red>"
-  tame-already-pet: "<red>这只生物已经是宠物了。</red>"
-  tame-name-taken: "<red>你已有一只叫</red> <white>{name}</white> <red>的宠物。</red>"
-  tame-name-invalid: "<red>名字无效。请使用 1-16 位字母/数字/下划线/中文。</red>"
-  tame-limit: "<red>宠物数量已达上限</red> <white>{max}</white> <red>（当前</red> <white>{count}</white><red>）。</red>"
-  delete-success: "<green>已取消驯服</green> <white>{name}</white><green>。</green>"
-  delete-not-found: "<red>找不到名为</red> <white>{name}</white> <red>的宠物。</red>"
-  list-header: "<gradient:#A18CD1:#FBC2EB><bold>你的宠物</bold></gradient> <dark_gray>({count})</dark_gray>"
-  list-entry: "<dark_gray>•</dark_gray> <white>{name}</white> <gray>({type})</gray> <dark_gray>|</dark_gray> <aqua>{state}</aqua>"
-  list-empty: "<gray>你还没有宠物。用</gray> <aqua>/pet tame <名字></aqua> <gray>驯服一只吧。</gray>"
-  list-other-header: "<gradient:#A18CD1:#FBC2EB><bold>{player}</bold></gradient> <gray>的宠物</gray> <dark_gray>({count})</dark_gray>"
-  toggle-follow: "<green>{name}</green> <gray>状态 →</gray> <aqua>{state}</aqua>"
-  toggle-attack-on: "<green>{name}</green> <gray>攻击模式</gray> <green>已开启</green>"
-  toggle-attack-off: "<green>{name}</green> <gray>攻击模式</gray> <red>已关闭</red>"
-  attack-started: "<green>{name}</green> <gray>开始攻击</gray> <red>{target}</red>"
-  attack-no-target: "<yellow>{name}</yellow> <gray>附近</gray> <white>{range}</white> <gray>格内没有可攻击的玩家。</gray>"
-  tpa-success: "<green>已传送到</green> <white>{name}</white> <green>身边。</green>"
-  tph-success: "<green>已将</green> <white>{name}</white> <green>传送到你身边。</green>"
-  pet-not-found: "<red>找不到宠物</red> <white>{name}</white><red>。</red>"
-  pet-entity-missing: "<red>宠物实体不存在或已卸载。</red>"
-  pet-died: "<red>你的宠物</red> <white>{name}</white> <red>已死亡，数据已清除。</red>"
-  pet-missing-notify: "<yellow>宠物</yellow> <white>{name}</white> <yellow>已丢失，已清理存档。</yellow>"
-  gui-no-pets: "<red>你没有可管理的宠物。</red>"
-  invincible-on: "<green>{name}</green> <gray>模式 →</gray> <gold>无敌</gold> <dark_gray>(站桩)</dark_gray>"
-  invincible-off: "<green>{name}</green> <gray>模式 →</gray> <aqua>普通</aqua>"
-  ai-on: "<green>{name}</green> <gray>AI →</gray> <green>开启</green>"
-  ai-off: "<green>{name}</green> <gray>AI →</gray> <red>关闭</red>"
-  rename-success: "<green>显示名已更新为</green> {display}"
-  rename-too-long: "<red>显示名过长：可见字数</red> <white>{length}</white><red>/</red><white>{max}</white> <gray>（不含颜色符号）</gray>"
-  scale-changed: "<green>{name}</green> <gray>体型 →</gray> <aqua>{scale}</aqua>"
-  baby-changed: "<green>{name}</green> <gray>幼体 →</gray> <aqua>{baby}</aqua>"
-  particle-changed: "<green>{name}</green> <gray>粒子 →</gray> <aqua>{preset}</aqua>"
-  mouth-changed: "<green>{name}</green> <gray>叼物 →</gray> <aqua>{item}</aqua>"
-  float-changed: "<green>{name}</green> <gray>悬浮物 →</gray> <aqua>{item}</aqua>"
-  attack-exit-invincible: "<yellow>{name}</yellow> <gray>进入无敌，已退出攻击。</gray>"
-  attack-blocked-invincible: "<yellow>{name}</yellow> <gray>处于无敌模式，无法攻击。</gray>"
-  help:
-    - "<gradient:#7EE8FA:#80FF72><bold>McPets 帮助</bold></gradient>"
-    - "<aqua>/pet tame <名字></aqua> <dark_gray>—</dark_gray> <gray>驯服准星生物</gray>"
-    - "<aqua>/pet list [玩家]</aqua> <dark_gray>—</dark_gray> <gray>宠物列表</gray>"
-    - "<aqua>/pet delete <名字></aqua> <dark_gray>—</dark_gray> <gray>取消驯服</gray>"
-    - "<aqua>/pet toggle <名字> follow|attack</aqua> <dark_gray>—</dark_gray> <gray>切换状态 / 点击攻击</gray>"
-    - "<aqua>/pet tpa <名字></aqua> <dark_gray>—</dark_gray> <gray>传送到宠物</gray>"
-    - "<aqua>/pet tph <名字></aqua> <dark_gray>—</dark_gray> <gray>宠物传到身边</gray>"
-    - "<aqua>/pet gui [名字]</aqua> <dark_gray>—</dark_gray> <gray>打开管理界面</gray>"
-    - "<gray>Shift+右键宠物也可打开 GUI</gray>"

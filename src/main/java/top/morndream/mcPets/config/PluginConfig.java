@@ -1,9 +1,11 @@
 package top.morndream.mcPets.config;
 
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import top.morndream.mcPets.McPets;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -15,6 +17,7 @@ public final class PluginConfig {
 
     private final McPets plugin;
     private FileConfiguration config;
+    private FileConfiguration messages;
 
     private double tameRange;
     private double interactRange;
@@ -65,6 +68,7 @@ public final class PluginConfig {
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
         config = plugin.getConfig();
+        reloadMessages();
 
         tameRange = config.getDouble("settings.tame-range", 8);
         interactRange = config.getDouble("settings.interact-range", 5);
@@ -121,12 +125,34 @@ public final class PluginConfig {
         particleInterval = config.getInt("particles.interval-ticks", 10);
     }
 
+    private void reloadMessages() {
+        File file = new File(plugin.getDataFolder(), "messages.yml");
+        if (!file.exists()) {
+            plugin.saveResource("messages.yml", false);
+        }
+        messages = YamlConfiguration.loadConfiguration(file);
+        // 兼容：若仍写在旧 config.yml 的 messages.* 且新文件缺键，可从 config 回退
+    }
+
     public String message(String path) {
-        return config.getString("messages." + path, path);
+        if (messages != null && messages.contains(path)) {
+            return messages.getString(path, path);
+        }
+        // 旧版 config.yml 中的 messages 回退
+        if (config != null && config.contains("messages." + path)) {
+            return config.getString("messages." + path, path);
+        }
+        return path;
     }
 
     public List<String> messageList(String path) {
-        return config.getStringList("messages." + path);
+        if (messages != null && messages.contains(path)) {
+            return messages.getStringList(path);
+        }
+        if (config != null && config.contains("messages." + path)) {
+            return config.getStringList("messages." + path);
+        }
+        return List.of();
     }
 
     public String prefix() {
