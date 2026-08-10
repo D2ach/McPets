@@ -65,7 +65,7 @@ public final class PetService {
         data.setEntityType(target.getType());
         data.setState(PetState.FOLLOW);
         data.setAttackEnabled(config.isAttackDefault());
-        data.setInvincible(false);
+        data.setInvincible(config.isDefaultInvincible());
         data.setAiEnabled(true);
         data.setScaleTier(config.getDefaultScaleTier());
         if (target instanceof Ageable ageable) {
@@ -80,8 +80,8 @@ public final class PetService {
         appearanceService.captureVanilla(target, data);
         LegacyPdcCleaner.strip(plugin, target);
         if (target instanceof Mob mob) {
-            mob.setAware(true);
             mob.setTarget(null);
+            applyMotionAware(mob, data);
         }
         appearanceService.applyRuntime(target, data);
         storage.add(data);
@@ -159,9 +159,18 @@ public final class PetService {
         if (state != PetState.ATTACK) {
             data.setAttackTargetId(null);
         }
+        // 待命：自动关 AI；跟随/漫步：自动开 AI，保证能走动
+        if (state == PetState.IDLE) {
+            data.setAiEnabled(false);
+        } else if (state == PetState.FOLLOW || state == PetState.WANDER) {
+            data.setAiEnabled(true);
+        }
         LivingEntity entity = findEntity(data);
         if (entity instanceof Mob mob) {
-            SchedulerUtil.run(entity, plugin, () -> mob.setTarget(null));
+            SchedulerUtil.run(entity, plugin, () -> {
+                mob.setTarget(null);
+                applyMotionAware(mob, data);
+            });
         }
         storage.markDirty();
         if (plugin.getPetAIManager() != null) {
@@ -188,7 +197,7 @@ public final class PetService {
     }
 
     /**
-     * 点击攻击：锁定宠物 5 格内最近的一名非主人玩家；没有目标则不攻击。
+     * 点击攻击：锁定宠物攻击范围内最近的一名非主人玩家；没有目标则不攻击。
      * 不会全图扫描 / 同时打多人。
      */
     public ClickAttackResult clickAttack(PetData data) {
@@ -255,15 +264,15 @@ public final class PetService {
                 data.setAttackEnabled(false);
                 data.setState(PetState.FOLLOW);
                 data.clearCombat();
-                if (entity instanceof Mob mob) {
-                    SchedulerUtil.run(entity, plugin, () -> mob.setTarget(null));
-                }
                 Player owner = Bukkit.getPlayer(data.getOwnerId());
                 if (owner != null) {
                     SchedulerUtil.run(owner, plugin, () -> messages.send(owner, "attack-exit-invincible",
                             Map.of("name", data.getInternalName())));
                 }
             }
+        }
+        if (entity instanceof Mob mob) {
+            SchedulerUtil.run(entity, plugin, () -> applyMotionAware(mob, data));
         }
         // 无敌只写 pets.yml + 伤害监听，不改实体 Invulnerable
         storage.markDirty();
@@ -276,18 +285,25 @@ public final class PetService {
         data.setAiEnabled(enabled);
         LivingEntity entity = findEntity(data);
         if (entity instanceof Mob mob) {
-            SchedulerUtil.run(entity, plugin, () -> {
-                if (!enabled) {
-                    mob.getPathfinder().stopPathfinding();
-                    mob.setTarget(null);
-                }
-                mob.setAware(enabled);
-            });
+            SchedulerUtil.run(entity, plugin, () -> applyMotionAware(mob, data));
         }
         storage.markDirty();
         if (plugin.getPetAIManager() != null) {
             plugin.getPetAIManager().resync(data);
         }
+    }
+
+    /** 无敌或 AI 关闭时冻结；否则恢复感知。 */
+    private void applyMotionAware(Mob mob, PetData data) {
+        boolean move = data.isAiEnabled() && !data.isInvincible();
+        if (!move) {
+            try {
+                mob.getPathfinder().stopPathfinding();
+            } catch (Exception ignored) {
+            }
+            mob.setTarget(null);
+        }
+        mob.setAware(move);
     }
 
     public void cycleScale(PetData data) {
@@ -564,7 +580,7 @@ public final class PetService {
             disableMouth(data);
             floatItemService.apply(entity, data);
             if (entity instanceof Mob mob) {
-                mob.setAware(data.isAiEnabled());
+                applyMotionAware(mob, data);
             }
             if (plugin.getPetAIManager() != null) {
                 plugin.getPetAIManager().ensureStarted(data, entity);

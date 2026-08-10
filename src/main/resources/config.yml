@@ -25,6 +25,8 @@ settings:
   missing-check-interval-ticks: 100
   # 显示名可见字数上限（不含颜色/格式符号）；内部名仍为 1-16
   max-display-name-length: 24
+  # 驯服后默认进入无敌（站桩、不寻路；切回普通后才会走动）
+  default-invincible: true
   # 插件被 disable / 热重载时对已存在宠物的处理：
   # park    = 实体留在世界，关闭无敌/攻击/叼物/AI，保留原版名字，重载后按 pets.yml 实体UUID恢复
   # despawn = 移除实体并写档，插件再次启用时按存档坐标重新生成（装备等 NBT 不保留）
@@ -47,7 +49,7 @@ attack:
   # 仇恨持续时间（秒）；超时结束本次点击攻击
   hate-duration-seconds: 60
   # 点击攻击：锁定并追击的最大半径（格）；只打点击时选中的那一名
-  auto-range: 5.0
+  auto-range: 10.0
   # 攻击间隔（tick）
   interval-ticks: 20
   # 攻击寻路速度
@@ -133,7 +135,7 @@ messages:
   pet-died: "<red>你的宠物</red> <white>{name}</white> <red>已死亡，数据已清除。</red>"
   pet-missing-notify: "<yellow>宠物</yellow> <white>{name}</white> <yellow>已丢失，已清理存档。</yellow>"
   gui-no-pets: "<red>你没有可管理的宠物。</red>"
-  invincible-on: "<green>{name}</green> <gray>模式 →</gray> <gold>无敌</gold>"
+  invincible-on: "<green>{name}</green> <gray>模式 →</gray> <gold>无敌</gold> <dark_gray>(站桩)</dark_gray>"
   invincible-off: "<green>{name}</green> <gray>模式 →</gray> <aqua>普通</aqua>"
   ai-on: "<green>{name}</green> <gray>AI →</gray> <green>开启</green>"
   ai-off: "<green>{name}</green> <gray>AI →</gray> <red>关闭</red>"

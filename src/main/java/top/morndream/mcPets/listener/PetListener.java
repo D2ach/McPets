@@ -175,31 +175,32 @@ public final class PetListener implements Listener {
 
     /** 非改名会话且未处于吞聊窗口时，放行普通聊天。 */
     private boolean allowNormalChat(UUID playerId) {
-        return !plugin.getGuiManager().isRenameSession(playerId)
-                && !suppressChatBroadcast.contains(playerId);
+        if (plugin.getGuiManager().isRenameSession(playerId)) {
+            return false;
+        }
+        return !suppressChatBroadcast.contains(playerId);
     }
 
     private void captureRenameInput(Player player, String message) {
         UUID id = player.getUniqueId();
-        if (!plugin.getGuiManager().isRenameSession(id)) {
-            return;
-        }
-        long now = System.currentTimeMillis();
-        Long prev = renameCaptureAt.put(id, now);
-        if (prev != null && now - prev < 250L) {
-            return; // 同一条输入的双事件，跳过第二次
-        }
-        suppressChatBroadcast.add(id);
-        SchedulerUtil.run(player, plugin, () -> {
-            try {
-                plugin.getGuiManager().handleRenameChat(player, message);
-            } finally {
-                SchedulerUtil.runGlobalDelayed(plugin, () -> {
-                    suppressChatBroadcast.remove(id);
-                    renameCaptureAt.remove(id);
-                }, 5L);
+        if (plugin.getGuiManager().isRenameSession(id)) {
+            long now = System.currentTimeMillis();
+            Long prev = renameCaptureAt.put(id, now);
+            if (prev != null && now - prev < 250L) {
+                return; // 同一条输入的双事件，跳过第二次
             }
-        });
+            suppressChatBroadcast.add(id);
+            SchedulerUtil.run(player, plugin, () -> {
+                try {
+                    plugin.getGuiManager().handleRenameChat(player, message);
+                } finally {
+                    SchedulerUtil.runGlobalDelayed(plugin, () -> {
+                        suppressChatBroadcast.remove(id);
+                        renameCaptureAt.remove(id);
+                    }, 5L);
+                }
+            });
+        }
     }
 
     @EventHandler

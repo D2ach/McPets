@@ -126,7 +126,8 @@ public final class PetAIManager {
     }
 
     private boolean needsMotion(PetData data) {
-        if (!data.isAiEnabled()) {
+        // 无敌模式站桩：不跟随/漫步/寻路，等同暂停运动 AI
+        if (!data.isAiEnabled() || data.isInvincible()) {
             return false;
         }
         return data.isAttackEnabled() || data.getState() != PetState.IDLE;

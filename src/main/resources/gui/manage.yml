@@ -38,6 +38,7 @@ items:
     name: "<gold><bold>待命</bold></gold>"
     lore:
       - "<gray>原地待命，不主动移动</gray>"
+      - "<gray>会自动关闭 AI</gray>"
     action: state_idle
 
   state_wander:
@@ -54,7 +55,7 @@ items:
     name: "<red><bold>点击攻击</bold></red>"
     lore:
       - "<gray>点击后攻击附近最近的一名玩家</gray>"
-      - "<gray>仅 5 格内；没有目标则不攻击</gray>"
+      - "<gray>仅 10 格内；伤害 1.0；没有目标则不攻击</gray>"
       - "<dark_gray>当前: {attack}</dark_gray>"
     action: click_attack
 
@@ -63,8 +64,8 @@ items:
     material: TOTEM_OF_UNDYING
     name: "<light_purple><bold>无敌 / 普通</bold></light_purple>"
     lore:
-      - "<gray>无敌: 不受伤且不攻击</gray>"
-      - "<gray>普通: 可受伤可攻击</gray>"
+      - "<gray>无敌: 不受伤、不攻击、原地站桩</gray>"
+      - "<gray>普通: 可受伤，按状态走动</gray>"
       - "<dark_gray>当前: {mode}</dark_gray>"
     action: toggle_mode
 

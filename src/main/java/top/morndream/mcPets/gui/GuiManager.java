@@ -68,6 +68,10 @@ public final class GuiManager implements Listener {
     }
 
     public void openManage(Player player, PetData data) {
+        if (denyManage(player, data)) {
+            messages.send(player, "no-permission");
+            return;
+        }
         GuiDefinition def = definitions.get("manage");
         Holder holder = new Holder("manage", data.getPetId());
         Inventory inv = def.create(holder, placeholders(data));
@@ -79,6 +83,10 @@ public final class GuiManager implements Listener {
     }
 
     public void openFloat(Player player, PetData data) {
+        if (denyManage(player, data)) {
+            messages.send(player, "no-permission");
+            return;
+        }
         GuiDefinition def = definitions.get("float");
         Holder holder = new Holder("float", data.getPetId());
         Inventory inv = def.create(holder, placeholders(data));
@@ -87,6 +95,12 @@ public final class GuiManager implements Listener {
         }
         player.openInventory(inv);
         openViewers.add(player.getUniqueId());
+    }
+
+    /** 非主人且无 mcpets.admin 时拒绝管理。 */
+    private boolean denyManage(Player player, PetData data) {
+        return data == null || (!data.getOwnerId().equals(player.getUniqueId())
+                && !player.hasPermission("mcpets.admin"));
     }
 
     /** 若已打开对应管理页则只刷新槽位，否则整页打开。 */
@@ -135,7 +149,9 @@ public final class GuiManager implements Listener {
         } else {
             map.put("attack", "<gray>待机</gray>");
         }
-        map.put("ai", data.isAiEnabled() ? "<green>开</green>" : "<red>关</red>");
+        map.put("ai", data.isAiEnabled()
+                ? (data.isInvincible() ? "<yellow>暂停(无敌)</yellow>" : "<green>开</green>")
+                : "<red>关</red>");
         map.put("mode", data.isInvincible() ? "无敌" : "普通");
         map.put("scale", String.valueOf(plugin.getPluginConfig().scaleValue(data.getScaleTier())));
         map.put("baby", data.isBaby() ? "是" : "否");
@@ -205,6 +221,11 @@ public final class GuiManager implements Listener {
             return;
         }
         if (data == null) {
+            return;
+        }
+        if (denyManage(player, data)) {
+            messages.send(player, "no-permission");
+            player.closeInventory();
             return;
         }
 

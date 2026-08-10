@@ -31,6 +31,7 @@ public final class PluginConfig {
     private int missingCheckIntervalTicks;
     private UnloadMode unloadMode = UnloadMode.PARK;
     private int maxDisplayNameLength;
+    private boolean defaultInvincible;
 
     private Set<EntityType> blacklist = Set.of();
 
@@ -80,6 +81,7 @@ public final class PluginConfig {
         missingCheckIntervalTicks = Math.max(20, config.getInt("settings.missing-check-interval-ticks", 100));
         unloadMode = UnloadMode.fromConfig(config.getString("settings.unload-mode", "park"));
         maxDisplayNameLength = Math.max(1, config.getInt("settings.max-display-name-length", 24));
+        defaultInvincible = config.getBoolean("settings.default-invincible", true);
 
         Set<EntityType> types = new HashSet<>();
         for (String raw : config.getStringList("blacklist")) {
@@ -95,7 +97,7 @@ public final class PluginConfig {
         attackDamage = config.getDouble("attack.damage", 1.0);
         maxHits = config.getInt("attack.max-hits-per-target", 6);
         hateSeconds = config.getInt("attack.hate-duration-seconds", 60);
-        autoRange = config.getDouble("attack.auto-range", 5);
+        autoRange = config.getDouble("attack.auto-range", 10);
         attackInterval = config.getInt("attack.interval-ticks", 20);
         attackSpeed = config.getDouble("attack.speed", 1.35);
 
@@ -193,6 +195,10 @@ public final class PluginConfig {
 
     public int getMaxDisplayNameLength() {
         return maxDisplayNameLength;
+    }
+
+    public boolean isDefaultInvincible() {
+        return defaultInvincible;
     }
 
     public double getAttackDamage() {
