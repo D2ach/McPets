@@ -15,11 +15,12 @@ items:
       - "<dark_gray>内部名: {internal}</dark_gray>"
       - "<gray>类型: <white>{type}</white></gray>"
       - "<gray>状态: <aqua>{state}</aqua></gray>"
-      - "<gray>攻击: {attack}</gray>"
+      - "<gray>战斗: {attack}</gray>"
       - "<gray>AI: {ai}</gray>"
       - "<gray>模式: <white>{mode}</white></gray>"
       - "<gray>体型: <aqua>{scale}</aqua></gray>"
       - "<gray>粒子: <aqua>{particle}</aqua></gray>"
+      - "<gray>悬浮: <aqua>{float}</aqua></gray>"
       - "<gray>叼物: <aqua>{mouth}</aqua></gray>"
     action: none
 
@@ -48,14 +49,15 @@ items:
       - "<gray>在附近自由走动</gray>"
     action: state_wander
 
-  toggle_attack:
+  click_attack:
     slot: 31
     material: IRON_SWORD
-    name: "<red><bold>攻击开关</bold></red>"
+    name: "<red><bold>点击攻击</bold></red>"
     lore:
-      - "<gray>开启后自动攻击附近玩家</gray>"
+      - "<gray>点击后攻击附近最近的一名玩家</gray>"
+      - "<gray>仅 5 格内；没有目标则不攻击</gray>"
       - "<dark_gray>当前: {attack}</dark_gray>"
-    action: toggle_attack
+    action: click_attack
 
   toggle_mode:
     slot: 32
@@ -84,7 +86,7 @@ items:
       - "<gray>支持 & / MiniMessage / #RRGGBB</gray>"
       - "<gray>可见字数上限 24（不含颜色符号）</gray>"
       - "<yellow>点击后在聊天中输入新名称</yellow>"
-      - "<dark_gray>输入 cancel 取消</dark_gray>"
+      - "<dark_gray>输入 c 或 cancel 取消</dark_gray>"
     action: rename
 
   scale:
@@ -114,17 +116,26 @@ items:
       - "<dark_gray>当前: {particle}</dark_gray>"
     action: cycle_particle
 
-  mouth:
+  float:
     slot: 40
+    material: ENDER_EYE
+    name: "<aqua><bold>悬浮物</bold></aqua>"
+    lore:
+      - "<gray>头顶悬浮装饰物品</gray>"
+      - "<dark_gray>当前: {float}</dark_gray>"
+    action: open_float
+
+  mouth:
+    slot: 41
     material: BONE
     name: "<white><bold>叼物</bold></white>"
     lore:
-      - "<gray>打开叼物选择页</gray>"
+      - "<gray>嘴里叼着的物品</gray>"
       - "<dark_gray>当前: {mouth}</dark_gray>"
     action: open_mouth
 
   tpa:
-    slot: 41
+    slot: 42
     material: ENDER_PEARL
     name: "<dark_aqua><bold>传送到宠物</bold></dark_aqua>"
     lore:
@@ -132,7 +143,7 @@ items:
     action: tpa
 
   tph:
-    slot: 42
+    slot: 43
     material: CHORUS_FRUIT
     name: "<dark_purple><bold>宠物传到身边</bold></dark_purple>"
     lore:

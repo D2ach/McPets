@@ -34,17 +34,20 @@ public final class PetService {
     private final PluginConfig config;
     private final MessageService messages;
     private final MouthService mouthService;
+    private final FloatItemService floatItemService;
     private final AppearanceService appearanceService;
     private final Set<UUID> pendingMissingChecks = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Integer> unloadWaitCounts = new ConcurrentHashMap<>();
 
     public PetService(McPets plugin, PetStorage storage, MessageService messages,
-                      MouthService mouthService, AppearanceService appearanceService) {
+                      MouthService mouthService, FloatItemService floatItemService,
+                      AppearanceService appearanceService) {
         this.plugin = plugin;
         this.storage = storage;
         this.config = plugin.getPluginConfig();
         this.messages = messages;
         this.mouthService = mouthService;
+        this.floatItemService = floatItemService;
         this.appearanceService = appearanceService;
     }
 
@@ -70,6 +73,7 @@ public final class PetService {
         }
         data.setParticlePreset("none");
         data.setMouthItem("none");
+        data.setFloatItem("none");
         snapshotLocation(data, target);
 
         // 快照原版状态 → 只写 pets.yml；运行时套用外观，不改 Tameable / Invulnerable / PDC
@@ -98,6 +102,7 @@ public final class PetService {
         if (entity != null) {
             SchedulerUtil.run(entity, plugin, () -> {
                 mouthService.clear(data);
+                floatItemService.clear(data);
                 LegacyPdcCleaner.strip(plugin, entity);
                 if (resetVisual) {
                     appearanceService.revertVanilla(entity, data);
@@ -105,6 +110,7 @@ public final class PetService {
             });
         } else {
             mouthService.clear(data);
+            floatItemService.clear(data);
         }
         storage.remove(data);
         storage.flush();
@@ -117,6 +123,7 @@ public final class PetService {
             plugin.getPetAIManager().stop(data.getPetId());
         }
         mouthService.clear(data);
+        floatItemService.clear(data);
         Player owner = Bukkit.getPlayer(data.getOwnerId());
         if (owner != null) {
             SchedulerUtil.run(owner, plugin,
@@ -173,14 +180,71 @@ public final class PetService {
             if (entity instanceof Mob mob) {
                 SchedulerUtil.run(entity, plugin, () -> mob.setTarget(null));
             }
-        } else if (!data.isInvincible()) {
-            data.setState(PetState.ATTACK);
-            data.setHateUntil(System.currentTimeMillis() + config.getHateSeconds() * 1000L);
         }
         storage.markDirty();
         if (plugin.getPetAIManager() != null) {
             plugin.getPetAIManager().resync(data);
         }
+    }
+
+    /**
+     * 点击攻击：锁定宠物 5 格内最近的一名非主人玩家；没有目标则不攻击。
+     * 不会全图扫描 / 同时打多人。
+     */
+    public ClickAttackResult clickAttack(PetData data) {
+        if (data.isInvincible()) {
+            return ClickAttackResult.INVINCIBLE;
+        }
+        LivingEntity entity = findEntity(data);
+        if (entity == null || !entity.isValid()) {
+            return ClickAttackResult.ENTITY_MISSING;
+        }
+        Player target = findNearestAttackTarget(data, entity, config.getAutoRange());
+        if (target == null) {
+            setAttackEnabled(data, false);
+            return ClickAttackResult.NO_TARGET;
+        }
+        data.clearCombat();
+        data.setAttackTargetId(target.getUniqueId());
+        data.setAttackEnabled(true);
+        data.setState(PetState.ATTACK);
+        data.setHateUntil(System.currentTimeMillis() + config.getHateSeconds() * 1000L);
+        storage.markDirty();
+        if (plugin.getPetAIManager() != null) {
+            plugin.getPetAIManager().resync(data);
+        }
+        return ClickAttackResult.STARTED;
+    }
+
+    /** 仅在当前世界、给定半径内找最近的一名可攻击玩家。 */
+    public Player findNearestAttackTarget(PetData data, LivingEntity entity, double range) {
+        if (entity == null || range <= 0) {
+            return null;
+        }
+        Player nearest = null;
+        double best = Double.MAX_VALUE;
+        double rangeSq = range * range;
+        for (Player player : entity.getWorld().getPlayers()) {
+            if (player.getUniqueId().equals(data.getOwnerId())) {
+                continue;
+            }
+            if (!player.isOnline() || player.isDead()) {
+                continue;
+            }
+            double d = entity.getLocation().distanceSquared(player.getLocation());
+            if (d <= rangeSq && d < best) {
+                best = d;
+                nearest = player;
+            }
+        }
+        return nearest;
+    }
+
+    public enum ClickAttackResult {
+        STARTED,
+        NO_TARGET,
+        INVINCIBLE,
+        ENTITY_MISSING
     }
 
     public void setInvincible(PetData data, boolean invincible) {
@@ -279,6 +343,18 @@ public final class PetService {
         storage.markDirty();
     }
 
+    public void setFloatItem(PetData data, String floatId) {
+        data.setFloatItem(floatId);
+        LivingEntity entity = findEntity(data);
+        if (entity != null) {
+            SchedulerUtil.run(entity, plugin, () -> floatItemService.apply(entity, data));
+        }
+        storage.markDirty();
+        if (plugin.getPetAIManager() != null) {
+            plugin.getPetAIManager().resync(data);
+        }
+    }
+
     public boolean isValidDisplayName(String raw) {
         if (raw == null || raw.isBlank()) {
             return true;
@@ -337,6 +413,7 @@ public final class PetService {
                 }
                 snapshotLocation(data, entity);
                 mouthService.refreshPosition(entity, data);
+                floatItemService.refreshPosition(entity, data);
                 storage.markDirty();
             });
         });
@@ -351,6 +428,7 @@ public final class PetService {
                 SchedulerUtil.run(entity, plugin, () -> {
                     appearanceService.applyRuntime(entity, data);
                     mouthService.apply(entity, data);
+                    floatItemService.apply(entity, data);
                     if (plugin.getPetAIManager() != null) {
                         plugin.getPetAIManager().ensureStarted(data, entity);
                     }
@@ -437,6 +515,7 @@ public final class PetService {
         SchedulerUtil.run(entity, plugin, () -> {
             appearanceService.applyRuntime(entity, data);
             mouthService.apply(entity, data);
+            floatItemService.apply(entity, data);
             if (plugin.getPetAIManager() != null) {
                 plugin.getPetAIManager().ensureStarted(data, entity);
             }
@@ -456,6 +535,7 @@ public final class PetService {
             plugin.getPetAIManager().stop(petId);
         }
         mouthService.clear(data);
+        floatItemService.clear(data);
         storage.remove(data);
         storage.flush();
     }
@@ -492,6 +572,7 @@ public final class PetService {
             LegacyPdcCleaner.strip(plugin, entity);
             appearanceService.applyRuntime(entity, data);
             mouthService.apply(entity, data);
+            floatItemService.apply(entity, data);
             if (entity instanceof Mob mob) {
                 mob.setAware(data.isAiEnabled());
             }
@@ -521,6 +602,7 @@ public final class PetService {
             try {
                 snapshotLocation(data, entity);
                 mouthService.clear(data);
+                floatItemService.clear(data);
                 if (mode == UnloadMode.DESPAWN) {
                     entity.remove();
                 } else {

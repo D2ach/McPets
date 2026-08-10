@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 /**
  * 支持 MiniMessage、& 颜色码、&#RRGGBB / #RRGGBB。
+ * 不改写 {@code <gradient:#RRGGBB:...>} / {@code <#RRGGBB>} 内部的 hex，避免 GUI/前缀花括号解析失败。
  */
 public final class Text {
 
@@ -18,7 +19,9 @@ public final class Text {
     private static final LegacyComponentSerializer LEGACY_AMP =
             LegacyComponentSerializer.legacyAmpersand();
     private static final Pattern HEX_AMP = Pattern.compile("&#([A-Fa-f0-9]{6})");
-    private static final Pattern HEX_HASH = Pattern.compile("(?<!<)#([A-Fa-f0-9]{6})");
+    private static final Pattern STANDALONE_HEX = Pattern.compile("#([A-Fa-f0-9]{6})");
+    private static final Pattern AMP_CODE = Pattern.compile(
+            "&([0-9a-fk-orA-FK-OR])");
 
     private Text() {
     }
@@ -28,12 +31,16 @@ public final class Text {
             return Component.empty();
         }
         String normalized = normalize(input);
-        // 若含 MiniMessage 标签则优先走 MiniMessage；否则 legacy
-        if (normalized.indexOf('<') >= 0 && normalized.indexOf('>') > normalized.indexOf('<')) {
+        if (normalized.indexOf('<') >= 0) {
             try {
                 return MINI.deserialize(normalized);
             } catch (Exception ignored) {
-                // fall through
+                try {
+                    // 归一化偶发破坏标签时，回退原始输入再试 MiniMessage
+                    return MINI.deserialize(input);
+                } catch (Exception ignored2) {
+                    // fall through
+                }
             }
         }
         return LEGACY_AMP.deserialize(normalized);
@@ -64,42 +71,74 @@ public final class Text {
     }
 
     public static String normalize(String input) {
-        String s = input;
-        Matcher m1 = HEX_AMP.matcher(s);
-        StringBuilder sb1 = new StringBuilder();
-        while (m1.find()) {
-            m1.appendReplacement(sb1, "<#" + m1.group(1) + ">");
+        if (input == null || input.isEmpty()) {
+            return "";
         }
-        m1.appendTail(sb1);
-        s = sb1.toString();
-
-        Matcher m2 = HEX_HASH.matcher(s);
-        StringBuilder sb2 = new StringBuilder();
-        while (m2.find()) {
-            m2.appendReplacement(sb2, "<#" + m2.group(1) + ">");
-        }
-        m2.appendTail(sb2);
-        s = sb2.toString();
-
-        // & -> MiniMessage 或保留给 legacy；统一把 &x 转成 § 再让 legacy 处理较麻烦
-        // 简单策略：把常见 & 色码转为 MiniMessage
-        s = s.replace("&0", "<black>").replace("&1", "<dark_blue>")
-                .replace("&2", "<dark_green>").replace("&3", "<dark_aqua>")
-                .replace("&4", "<dark_red>").replace("&5", "<dark_purple>")
-                .replace("&6", "<gold>").replace("&7", "<gray>")
-                .replace("&8", "<dark_gray>").replace("&9", "<blue>")
-                .replace("&a", "<green>").replace("&b", "<aqua>")
-                .replace("&c", "<red>").replace("&d", "<light_purple>")
-                .replace("&e", "<yellow>").replace("&f", "<white>")
-                .replace("&l", "<bold>").replace("&o", "<italic>")
-                .replace("&n", "<underlined>").replace("&m", "<strikethrough>")
-                .replace("&k", "<obfuscated>").replace("&r", "<reset>")
-                .replace("&A", "<green>").replace("&B", "<aqua>")
-                .replace("&C", "<red>").replace("&D", "<light_purple>")
-                .replace("&E", "<yellow>").replace("&F", "<white>")
-                .replace("&L", "<bold>").replace("&O", "<italic>")
-                .replace("&N", "<underlined>").replace("&M", "<strikethrough>")
-                .replace("&K", "<obfuscated>").replace("&R", "<reset>");
+        String s = HEX_AMP.matcher(input).replaceAll("<#$1>");
+        s = replaceOutsideTags(s, STANDALONE_HEX, m -> "<#" + m.group(1) + ">");
+        s = replaceOutsideTags(s, AMP_CODE, Text::ampToMini);
         return s;
+    }
+
+    private static String ampToMini(Matcher m) {
+        return switch (m.group(1).charAt(0)) {
+            case '0' -> "<black>";
+            case '1' -> "<dark_blue>";
+            case '2' -> "<dark_green>";
+            case '3' -> "<dark_aqua>";
+            case '4' -> "<dark_red>";
+            case '5' -> "<dark_purple>";
+            case '6' -> "<gold>";
+            case '7' -> "<gray>";
+            case '8' -> "<dark_gray>";
+            case '9' -> "<blue>";
+            case 'a', 'A' -> "<green>";
+            case 'b', 'B' -> "<aqua>";
+            case 'c', 'C' -> "<red>";
+            case 'd', 'D' -> "<light_purple>";
+            case 'e', 'E' -> "<yellow>";
+            case 'f', 'F' -> "<white>";
+            case 'l', 'L' -> "<bold>";
+            case 'o', 'O' -> "<italic>";
+            case 'n', 'N' -> "<underlined>";
+            case 'm', 'M' -> "<strikethrough>";
+            case 'k', 'K' -> "<obfuscated>";
+            case 'r', 'R' -> "<reset>";
+            default -> m.group();
+        };
+    }
+
+    /**
+     * 只在 MiniMessage / HTML 风格标签之外做替换，避免动到 {@code <gradient:#aabbcc:...>}。
+     */
+    private static String replaceOutsideTags(String input, Pattern pattern,
+                                             java.util.function.Function<Matcher, String> replacer) {
+        StringBuilder out = new StringBuilder(input.length() + 16);
+        int i = 0;
+        while (i < input.length()) {
+            char c = input.charAt(i);
+            if (c == '<') {
+                int end = input.indexOf('>', i + 1);
+                if (end < 0) {
+                    out.append(input, i, input.length());
+                    break;
+                }
+                out.append(input, i, end + 1);
+                i = end + 1;
+                continue;
+            }
+            int nextTag = input.indexOf('<', i);
+            int chunkEnd = nextTag < 0 ? input.length() : nextTag;
+            String chunk = input.substring(i, chunkEnd);
+            Matcher m = pattern.matcher(chunk);
+            StringBuilder sb = new StringBuilder(chunk.length());
+            while (m.find()) {
+                m.appendReplacement(sb, Matcher.quoteReplacement(replacer.apply(m)));
+            }
+            m.appendTail(sb);
+            out.append(sb);
+            i = chunkEnd;
+        }
+        return out.toString();
     }
 }

@@ -1,4 +1,4 @@
-# 叼物选择页
+# 叼物选择页（嘴部）
 title: "<gradient:#F6D365:#FDA085><bold>叼物 · {name}</bold></gradient>"
 size: 27
 
@@ -12,7 +12,8 @@ items:
     material: BARRIER
     name: "<red><bold>移除叼物</bold></red>"
     lore:
-      - "<gray>清空嘴上的物品</gray>"
+      - "<gray>清空嘴里的物品</gray>"
+      - "<dark_gray>狐狸用主手；其他生物用嘴部展示</dark_gray>"
     action: mouth_none
 
   bone:
@@ -39,17 +40,17 @@ items:
     name: "<light_purple><bold>生猪排</bold></light_purple>"
     action: mouth_porkchop
 
-  diamond:
+  apple:
     slot: 15
-    material: DIAMOND
-    name: "<aqua><bold>钻石</bold></aqua>"
-    action: mouth_diamond
+    material: APPLE
+    name: "<red><bold>苹果</bold></red>"
+    action: mouth_apple
 
-  sword:
+  cookie:
     slot: 16
-    material: GOLDEN_SWORD
-    name: "<yellow><bold>金剑</bold></yellow>"
-    action: mouth_sword
+    material: COOKIE
+    name: "<gold><bold>曲奇</bold></gold>"
+    action: mouth_cookie
 
   back:
     slot: 22

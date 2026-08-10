@@ -7,6 +7,7 @@ import top.morndream.mcPets.config.PluginConfig;
 import top.morndream.mcPets.gui.GuiManager;
 import top.morndream.mcPets.listener.PetListener;
 import top.morndream.mcPets.service.AppearanceService;
+import top.morndream.mcPets.service.FloatItemService;
 import top.morndream.mcPets.service.MessageService;
 import top.morndream.mcPets.service.MouthService;
 import top.morndream.mcPets.service.ParticleService;
@@ -20,6 +21,7 @@ public final class McPets extends JavaPlugin {
     private PetStorage petStorage;
     private MessageService messageService;
     private MouthService mouthService;
+    private FloatItemService floatItemService;
     private ParticleService particleService;
     private PetService petService;
     private GuiManager guiManager;
@@ -31,6 +33,7 @@ public final class McPets extends JavaPlugin {
         saveResource("gui/main.yml", false);
         saveResource("gui/manage.yml", false);
         saveResource("gui/mouth.yml", false);
+        saveResource("gui/float.yml", false);
 
         pluginConfig = new PluginConfig(this);
         pluginConfig.reload();
@@ -41,8 +44,9 @@ public final class McPets extends JavaPlugin {
         messageService = new MessageService(this);
         AppearanceService appearanceService = new AppearanceService(this);
         mouthService = new MouthService(this);
+        floatItemService = new FloatItemService(this);
         particleService = new ParticleService(this);
-        petService = new PetService(this, petStorage, messageService, mouthService, appearanceService);
+        petService = new PetService(this, petStorage, messageService, mouthService, floatItemService, appearanceService);
         guiManager = new GuiManager(this);
         guiManager.loadAll();
         petAIManager = new PetAIManager(this);
@@ -87,6 +91,9 @@ public final class McPets extends JavaPlugin {
         if (mouthService != null) {
             mouthService.shutdown();
         }
+        if (floatItemService != null) {
+            floatItemService.shutdown();
+        }
         if (petStorage != null) {
             petStorage.save(true);
         }
@@ -109,6 +116,10 @@ public final class McPets extends JavaPlugin {
 
     public MouthService getMouthService() {
         return mouthService;
+    }
+
+    public FloatItemService getFloatItemService() {
+        return floatItemService;
     }
 
     public ParticleService getParticleService() {

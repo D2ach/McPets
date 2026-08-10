@@ -38,7 +38,6 @@ public final class PluginConfig {
     private int maxHits;
     private int hateSeconds;
     private double autoRange;
-    private double commandRange;
     private int attackInterval;
     private double attackSpeed;
     private boolean attackDefault;
@@ -49,6 +48,12 @@ public final class PluginConfig {
     private double mouthForward;
     private double mouthUp;
     private float mouthDisplayScale;
+    private double mouthEyeFactor;
+    private double floatOffsetUp;
+    private double floatOffsetForward;
+    private float floatDisplayScale;
+    private boolean floatBob;
+    private double floatBobAmplitude;
     private int particleInterval;
 
     public PluginConfig(McPets plugin) {
@@ -90,8 +95,7 @@ public final class PluginConfig {
         attackDamage = config.getDouble("attack.damage", 1.0);
         maxHits = config.getInt("attack.max-hits-per-target", 6);
         hateSeconds = config.getInt("attack.hate-duration-seconds", 60);
-        autoRange = config.getDouble("attack.auto-range", 12);
-        commandRange = config.getDouble("attack.command-range", 5);
+        autoRange = config.getDouble("attack.auto-range", 5);
         attackInterval = config.getInt("attack.interval-ticks", 20);
         attackSpeed = config.getDouble("attack.speed", 1.35);
 
@@ -103,9 +107,15 @@ public final class PluginConfig {
         }
         defaultScaleTier = config.getInt("scale.default-tier", 1);
 
-        mouthForward = config.getDouble("mouth-item.offset-forward", 0.35);
-        mouthUp = config.getDouble("mouth-item.offset-up", 0.15);
-        mouthDisplayScale = (float) config.getDouble("mouth-item.display-scale", 0.45);
+        mouthForward = config.getDouble("mouth-item.offset-forward", 0.45);
+        mouthUp = config.getDouble("mouth-item.offset-up", -0.55);
+        mouthDisplayScale = (float) config.getDouble("mouth-item.display-scale", 0.35);
+        mouthEyeFactor = config.getDouble("mouth-item.eye-factor", 1.0);
+        floatOffsetUp = config.getDouble("float-item.offset-up", 1.15);
+        floatOffsetForward = config.getDouble("float-item.offset-forward", 0.0);
+        floatDisplayScale = (float) config.getDouble("float-item.display-scale", 0.5);
+        floatBob = config.getBoolean("float-item.bob", true);
+        floatBobAmplitude = config.getDouble("float-item.bob-amplitude", 0.08);
         particleInterval = config.getInt("particles.interval-ticks", 10);
     }
 
@@ -201,10 +211,6 @@ public final class PluginConfig {
         return autoRange;
     }
 
-    public double getCommandRange() {
-        return commandRange;
-    }
-
     public int getAttackInterval() {
         return attackInterval;
     }
@@ -246,6 +252,30 @@ public final class PluginConfig {
 
     public float getMouthDisplayScale() {
         return mouthDisplayScale;
+    }
+
+    public double getMouthEyeFactor() {
+        return mouthEyeFactor;
+    }
+
+    public double getFloatOffsetUp() {
+        return floatOffsetUp;
+    }
+
+    public double getFloatOffsetForward() {
+        return floatOffsetForward;
+    }
+
+    public float getFloatDisplayScale() {
+        return floatDisplayScale;
+    }
+
+    public boolean isFloatBob() {
+        return floatBob;
+    }
+
+    public double getFloatBobAmplitude() {
+        return floatBobAmplitude;
     }
 
     public int getParticleInterval() {

@@ -44,12 +44,10 @@ attack:
   damage: 1.0
   # 每个目标最多攻击次数（独立计数）
   max-hits-per-target: 6
-  # 仇恨持续时间（秒）
+  # 仇恨持续时间（秒）；超时结束本次点击攻击
   hate-duration-seconds: 60
-  # 自动攻击扫描半径
-  auto-range: 12.0
-  # 指定攻击时，目标与宠物的最大距离
-  command-range: 5.0
+  # 点击攻击：锁定并追击的最大半径（格）；只打点击时选中的那一名
+  auto-range: 5.0
   # 攻击间隔（tick）
   interval-ticks: 20
   # 攻击寻路速度
@@ -64,11 +62,19 @@ scale:
   default-tier: 1
 
 mouth-item:
-  # 展示实体相对嘴巴的偏移（实体本地前方）
-  offset-forward: 0.35
-  offset-up: 0.15
-  # 展示大小
-  display-scale: 0.45
+  # 真正叼物：乘客挂点多在头顶，向前 + 向下贴近嘴（offset-up 建议为负）
+  offset-forward: 0.45
+  offset-up: -0.55
+  display-scale: 0.35
+  eye-factor: 1.0
+
+float-item:
+  # 悬浮物：头顶上方装饰，可轻微浮动
+  offset-up: 1.15
+  offset-forward: 0.0
+  display-scale: 0.5
+  bob: true
+  bob-amplitude: 0.08
 
 particles:
   # 自研预设粒子间隔（tick）
@@ -118,6 +124,8 @@ messages:
   toggle-follow: "<green>{name}</green> <gray>状态 →</gray> <aqua>{state}</aqua>"
   toggle-attack-on: "<green>{name}</green> <gray>攻击模式</gray> <green>已开启</green>"
   toggle-attack-off: "<green>{name}</green> <gray>攻击模式</gray> <red>已关闭</red>"
+  attack-started: "<green>{name}</green> <gray>开始攻击</gray> <red>{target}</red>"
+  attack-no-target: "<yellow>{name}</yellow> <gray>附近</gray> <white>{range}</white> <gray>格内没有可攻击的玩家。</gray>"
   tpa-success: "<green>已传送到</green> <white>{name}</white> <green>身边。</green>"
   tph-success: "<green>已将</green> <white>{name}</white> <green>传送到你身边。</green>"
   pet-not-found: "<red>找不到宠物</red> <white>{name}</white><red>。</red>"
@@ -135,13 +143,15 @@ messages:
   baby-changed: "<green>{name}</green> <gray>幼体 →</gray> <aqua>{baby}</aqua>"
   particle-changed: "<green>{name}</green> <gray>粒子 →</gray> <aqua>{preset}</aqua>"
   mouth-changed: "<green>{name}</green> <gray>叼物 →</gray> <aqua>{item}</aqua>"
+  float-changed: "<green>{name}</green> <gray>悬浮物 →</gray> <aqua>{item}</aqua>"
   attack-exit-invincible: "<yellow>{name}</yellow> <gray>进入无敌，已退出攻击。</gray>"
+  attack-blocked-invincible: "<yellow>{name}</yellow> <gray>处于无敌模式，无法攻击。</gray>"
   help:
     - "<gradient:#7EE8FA:#80FF72><bold>McPets 帮助</bold></gradient>"
     - "<aqua>/pet tame <名字></aqua> <dark_gray>—</dark_gray> <gray>驯服准星生物</gray>"
     - "<aqua>/pet list [玩家]</aqua> <dark_gray>—</dark_gray> <gray>宠物列表</gray>"
     - "<aqua>/pet delete <名字></aqua> <dark_gray>—</dark_gray> <gray>取消驯服</gray>"
-    - "<aqua>/pet toggle <名字> follow|attack</aqua> <dark_gray>—</dark_gray> <gray>切换状态</gray>"
+    - "<aqua>/pet toggle <名字> follow|attack</aqua> <dark_gray>—</dark_gray> <gray>切换状态 / 点击攻击</gray>"
     - "<aqua>/pet tpa <名字></aqua> <dark_gray>—</dark_gray> <gray>传送到宠物</gray>"
     - "<aqua>/pet tph <名字></aqua> <dark_gray>—</dark_gray> <gray>宠物传到身边</gray>"
     - "<aqua>/pet gui [名字]</aqua> <dark_gray>—</dark_gray> <gray>打开管理界面</gray>"

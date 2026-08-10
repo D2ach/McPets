@@ -101,11 +101,11 @@ public final class PetAIManager {
         stop(data.getPetId());
 
         boolean motion = needsMotion(data);
-        boolean particles = hasParticles(data);
+        boolean light = needsLightTick(data);
 
         if (!motion) {
             handleIdle(entity);
-            if (!particles) {
+            if (!light) {
                 return;
             }
             long period = Math.max(1L, config.getParticleInterval());
@@ -135,6 +135,14 @@ public final class PetAIManager {
     private boolean hasParticles(PetData data) {
         String p = data.getParticlePreset();
         return p != null && !p.equalsIgnoreCase("none");
+    }
+
+    private boolean needsLightTick(PetData data) {
+        if (hasParticles(data)) {
+            return true;
+        }
+        // 悬浮物仅在开启浮动时需要慢速 tick；关闭浮动则乘客自然跟随，不占调度
+        return config.isFloatBob() && !top.morndream.mcPets.util.CosmeticItems.isNone(data.getFloatItem());
     }
 
     private long resolvePeriod(PetData data) {
@@ -173,9 +181,12 @@ public final class PetAIManager {
             stop(petId);
             return;
         }
+        ticks.merge(petId, 1L, Long::sum);
         if (hasParticles(data)) {
             plugin.getParticleService().tickEntity(entity, data);
-        } else {
+        }
+        plugin.getFloatItemService().tick(entity, data, ticks.getOrDefault(petId, 0L));
+        if (!needsLightTick(data)) {
             stop(petId);
         }
     }
@@ -207,6 +218,10 @@ public final class PetAIManager {
         if (hasParticles(data)) {
             plugin.getParticleService().tickEntity(entity, data);
         }
+        // 叼物不在此刷新；悬浮物：浮动时更新，否则偶尔检查是否掉座
+        if (config.isFloatBob() || ticks.getOrDefault(petId, 0L) % 20 == 0) {
+            plugin.getFloatItemService().tick(entity, data, ticks.getOrDefault(petId, 0L));
+        }
 
         if (data.isInvincible() && data.getState() == PetState.ATTACK) {
             data.setState(PetState.FOLLOW);
@@ -221,13 +236,7 @@ public final class PetAIManager {
                 data.setState(PetState.ATTACK);
             }
             if (data.getHateUntil() > 0 && System.currentTimeMillis() > data.getHateUntil()) {
-                data.setAttackEnabled(false);
-                data.setState(PetState.FOLLOW);
-                data.clearCombat();
-                if (entity instanceof Mob mob) {
-                    mob.setTarget(null);
-                }
-                resync(data, entity);
+                endClickAttack(data, entity);
                 return;
             }
             handleAttack(data, entity);
@@ -302,14 +311,12 @@ public final class PetAIManager {
     }
 
     private void handleAttack(PetData data, LivingEntity entity) {
-        Player target = resolveTarget(data, entity);
+        // 仅追击点击时锁定的那一名目标，绝不重新全图搜敌
+        Player target = resolveLockedTarget(data, entity);
         if (target == null) {
-            if (entity instanceof Mob mob) {
-                mob.setTarget(null);
-            }
+            endClickAttack(data, entity);
             return;
         }
-        data.setAttackTargetId(target.getUniqueId());
 
         if (!SchedulerUtil.owns(target)) {
             return;
@@ -326,17 +333,21 @@ public final class PetAIManager {
         }
         int hits = data.getHitCounts().getOrDefault(target.getUniqueId(), 0);
         if (hits >= config.getMaxHits()) {
-            data.setAttackTargetId(null);
-            if (entity instanceof Mob mob) {
-                mob.setTarget(null);
-            }
+            endClickAttack(data, entity);
             return;
         }
 
         double damage = config.getAttackDamage();
         UUID targetId = target.getUniqueId();
-        data.getHitCounts().put(target.getUniqueId(), hits + 1);
-        SchedulerUtil.run(target, plugin, () -> PetDamageBridge.runAllowed(() -> {
+        data.getHitCounts().put(targetId, hits + 1);
+        SchedulerUtil.run(target, plugin, () -> dealDamage(data, targetId, damage));
+        if (hits + 1 >= config.getMaxHits()) {
+            endClickAttack(data, entity);
+        }
+    }
+
+    private void dealDamage(PetData data, UUID targetId, double damage) {
+        PetDamageBridge.runAllowed(() -> {
             Player p = Bukkit.getPlayer(targetId);
             if (p == null || !p.isOnline() || p.isDead()) {
                 return;
@@ -354,41 +365,43 @@ public final class PetAIManager {
                 } catch (Exception ignored) {
                 }
             }
-        }));
+        });
     }
 
-    private Player resolveTarget(PetData data, LivingEntity entity) {
-        UUID preferred = data.getAttackTargetId();
-        if (preferred != null) {
-            Player p = Bukkit.getPlayer(preferred);
-            double cmdRangeSq = config.getCommandRange() * config.getCommandRange();
-            if (isValidTarget(data, entity, p)
-                    && data.getHitCounts().getOrDefault(preferred, 0) < config.getMaxHits()
-                    && SchedulerUtil.owns(p)
-                    && entity.getLocation().distanceSquared(p.getLocation()) <= cmdRangeSq) {
-                return p;
+    private void endClickAttack(PetData data, LivingEntity entity) {
+        data.setAttackEnabled(false);
+        data.setState(PetState.FOLLOW);
+        data.clearCombat();
+        if (entity instanceof Mob mob) {
+            mob.setTarget(null);
+            try {
+                mob.getPathfinder().stopPathfinding();
+            } catch (Exception ignored) {
             }
         }
-        Player nearest = null;
-        double best = Double.MAX_VALUE;
-        double rangeSq = config.getAutoRange() * config.getAutoRange();
-        for (Player player : entity.getWorld().getPlayers()) {
-            if (!SchedulerUtil.owns(player)) {
-                continue;
-            }
-            if (!isValidTarget(data, entity, player)) {
-                continue;
-            }
-            if (data.getHitCounts().getOrDefault(player.getUniqueId(), 0) >= config.getMaxHits()) {
-                continue;
-            }
-            double d = entity.getLocation().distanceSquared(player.getLocation());
-            if (d <= rangeSq && d < best) {
-                best = d;
-                nearest = player;
-            }
+        pets.storage().markDirty();
+        resync(data, entity);
+    }
+
+    /** 只认点击锁定的目标；离开攻击半径或失效则返回 null。 */
+    private Player resolveLockedTarget(PetData data, LivingEntity entity) {
+        UUID locked = data.getAttackTargetId();
+        if (locked == null) {
+            return null;
         }
-        return nearest;
+        Player p = Bukkit.getPlayer(locked);
+        if (!isValidTarget(data, entity, p)) {
+            return null;
+        }
+        if (data.getHitCounts().getOrDefault(locked, 0) >= config.getMaxHits()) {
+            return null;
+        }
+        double range = config.getAutoRange();
+        double rangeSq = range * range;
+        if (entity.getLocation().distanceSquared(p.getLocation()) > rangeSq) {
+            return null;
+        }
+        return p;
     }
 
     private boolean isValidTarget(PetData data, LivingEntity entity, Player player) {

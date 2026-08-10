@@ -1,0 +1,58 @@
+# 悬浮物品选择页
+title: "<gradient:#89F7FE:#66A6FF><bold>悬浮物 · {name}</bold></gradient>"
+size: 27
+
+filler:
+  material: LIGHT_BLUE_STAINED_GLASS_PANE
+  name: " "
+
+items:
+  none:
+    slot: 10
+    material: BARRIER
+    name: "<red><bold>移除悬浮物</bold></red>"
+    lore:
+      - "<gray>清空头顶悬浮装饰</gray>"
+    action: float_none
+
+  bone:
+    slot: 11
+    material: BONE
+    name: "<white><bold>骨头</bold></white>"
+    action: float_bone
+
+  stick:
+    slot: 12
+    material: STICK
+    name: "<gold><bold>木棍</bold></gold>"
+    action: float_stick
+
+  rose:
+    slot: 13
+    material: POPPY
+    name: "<red><bold>花朵</bold></red>"
+    action: float_rose
+
+  porkchop:
+    slot: 14
+    material: PORKCHOP
+    name: "<light_purple><bold>生猪排</bold></light_purple>"
+    action: float_porkchop
+
+  diamond:
+    slot: 15
+    material: DIAMOND
+    name: "<aqua><bold>钻石</bold></aqua>"
+    action: float_diamond
+
+  sword:
+    slot: 16
+    material: GOLDEN_SWORD
+    name: "<yellow><bold>金剑</bold></yellow>"
+    action: float_sword
+
+  back:
+    slot: 22
+    material: ARROW
+    name: "<yellow>返回</yellow>"
+    action: back

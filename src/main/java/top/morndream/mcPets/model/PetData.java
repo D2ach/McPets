@@ -26,6 +26,7 @@ public final class PetData {
     private boolean baby;
     private String particlePreset = "none";
     private String mouthItem = "none";
+    private String floatItem = "none";
     private String worldName;
     private double x;
     private double y;
@@ -160,6 +161,14 @@ public final class PetData {
         this.mouthItem = mouthItem == null ? "none" : mouthItem;
     }
 
+    public String getFloatItem() {
+        return floatItem;
+    }
+
+    public void setFloatItem(String floatItem) {
+        this.floatItem = floatItem == null ? "none" : floatItem;
+    }
+
     public String getWorldName() {
         return worldName;
     }
@@ -282,6 +291,7 @@ public final class PetData {
         section.set("baby", baby);
         section.set("particle", particlePreset);
         section.set("mouth", mouthItem);
+        section.set("float", floatItem);
         section.set("world", worldName);
         section.set("x", x);
         section.set("y", y);
@@ -324,6 +334,15 @@ public final class PetData {
         data.baby = section.getBoolean("baby", false);
         data.particlePreset = section.getString("particle", "none");
         data.mouthItem = section.getString("mouth", "none");
+        // 旧版「叼物」实际是头顶展示：无 float 字段时迁到悬浮物，叼物置空
+        if (section.contains("float")) {
+            data.floatItem = section.getString("float", "none");
+        } else if (section.contains("mouth") && !"none".equalsIgnoreCase(data.mouthItem)) {
+            data.floatItem = data.mouthItem;
+            data.mouthItem = "none";
+        } else {
+            data.floatItem = "none";
+        }
         data.worldName = section.getString("world");
         data.x = section.getDouble("x");
         data.y = section.getDouble("y");

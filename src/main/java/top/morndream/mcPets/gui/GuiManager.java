@@ -39,7 +39,7 @@ public final class GuiManager implements Listener {
 
     public void loadAll() {
         definitions.clear();
-        for (String id : List.of("main", "manage", "mouth")) {
+        for (String id : List.of("main", "manage", "mouth", "float")) {
             definitions.put(id, GuiDefinition.load(plugin, id));
         }
     }
@@ -89,6 +89,17 @@ public final class GuiManager implements Listener {
         openViewers.add(player.getUniqueId());
     }
 
+    public void openFloat(Player player, PetData data) {
+        GuiDefinition def = definitions.get("float");
+        Holder holder = new Holder("float", data.getPetId());
+        Inventory inv = def.create(holder, placeholders(data));
+        for (var e : def.buttons().entrySet()) {
+            inv.setItem(e.getKey(), def.renderButton(e.getValue(), placeholders(data)));
+        }
+        player.openInventory(inv);
+        openViewers.add(player.getUniqueId());
+    }
+
     /** 若已打开对应管理页则只刷新槽位，否则整页打开。 */
     public void refreshManage(Player player, PetData data) {
         if (player.getOpenInventory().getTopInventory().getHolder() instanceof Holder holder
@@ -120,6 +131,21 @@ public final class GuiManager implements Listener {
         openMouth(player, data);
     }
 
+    public void refreshFloat(Player player, PetData data) {
+        if (player.getOpenInventory().getTopInventory().getHolder() instanceof Holder holder
+                && "float".equals(holder.guiId())
+                && data.getPetId().equals(holder.petId())) {
+            GuiDefinition def = definitions.get("float");
+            Inventory inv = player.getOpenInventory().getTopInventory();
+            Map<String, String> ph = placeholders(data);
+            for (var e : def.buttons().entrySet()) {
+                inv.setItem(e.getKey(), def.renderButton(e.getValue(), ph));
+            }
+            return;
+        }
+        openFloat(player, data);
+    }
+
     private Map<String, String> placeholders(PetData data) {
         Map<String, String> map = new HashMap<>();
         map.put("name", data.getInternalName());
@@ -127,13 +153,21 @@ public final class GuiManager implements Listener {
         map.put("display", data.effectiveDisplayRaw());
         map.put("type", data.getEntityType() == null ? "?" : data.getEntityType().name());
         map.put("state", data.getState().display());
-        map.put("attack", data.isAttackEnabled() ? "<green>开</green>" : "<red>关</red>");
+        if (data.isAttackEnabled() && data.getAttackTargetId() != null) {
+            Player target = Bukkit.getPlayer(data.getAttackTargetId());
+            map.put("attack", target != null
+                    ? "<red>→ " + target.getName() + "</red>"
+                    : "<red>战斗中</red>");
+        } else {
+            map.put("attack", "<gray>待机</gray>");
+        }
         map.put("ai", data.isAiEnabled() ? "<green>开</green>" : "<red>关</red>");
         map.put("mode", data.isInvincible() ? "无敌" : "普通");
         map.put("scale", String.valueOf(plugin.getPluginConfig().scaleValue(data.getScaleTier())));
         map.put("baby", data.isBaby() ? "是" : "否");
         map.put("particle", data.getParticlePreset());
         map.put("mouth", data.getMouthItem());
+        map.put("float", data.getFloatItem());
         return map;
     }
 
@@ -190,7 +224,7 @@ public final class GuiManager implements Listener {
         }
         PetData data = holder.petId() == null ? null : pets.storage().byPetId(holder.petId());
         if (action.equals("back")) {
-            if ("mouth".equals(holder.guiId()) && data != null) {
+            if (("mouth".equals(holder.guiId()) || "float".equals(holder.guiId())) && data != null) {
                 openManage(player, data);
             } else {
                 openMain(player);
@@ -217,15 +251,30 @@ public final class GuiManager implements Listener {
                 messages.send(player, "toggle-follow", Map.of("name", data.getInternalName(), "state", "漫步"));
                 refreshManage(player, data);
             }
-            case "toggle_attack" -> {
-                boolean next = !data.isAttackEnabled();
-                if (next && data.isInvincible()) {
-                    messages.send(player, "attack-exit-invincible", Map.of("name", data.getInternalName()));
-                    return;
+            case "toggle_attack", "click_attack" -> {
+                PetService.ClickAttackResult result = pets.clickAttack(data);
+                switch (result) {
+                    case INVINCIBLE -> messages.send(player, "attack-blocked-invincible",
+                            Map.of("name", data.getInternalName()));
+                    case ENTITY_MISSING -> messages.send(player, "pet-entity-missing");
+                    case NO_TARGET -> messages.send(player, "attack-no-target",
+                            Map.of("name", data.getInternalName(),
+                                    "range", String.valueOf(plugin.getPluginConfig().getAutoRange())));
+                    case STARTED -> {
+                        String targetName = "?";
+                        UUID tid = data.getAttackTargetId();
+                        if (tid != null) {
+                            Player t = Bukkit.getPlayer(tid);
+                            if (t != null) {
+                                targetName = t.getName();
+                            }
+                        }
+                        messages.send(player, "attack-started", Map.of(
+                                "name", data.getInternalName(),
+                                "target", targetName
+                        ));
+                    }
                 }
-                pets.setAttackEnabled(data, next);
-                messages.send(player, next ? "toggle-attack-on" : "toggle-attack-off",
-                        Map.of("name", data.getInternalName()));
                 refreshManage(player, data);
             }
             case "toggle_mode" -> {
@@ -245,7 +294,8 @@ public final class GuiManager implements Listener {
                 player.closeInventory();
                 messages.sendRaw(player, "<gradient:#7EE8FA:#80FF72>请在聊天中输入新的显示名</gradient> <gray>(可见≤"
                         + plugin.getPluginConfig().getMaxDisplayNameLength()
-                        + "字，不含颜色；支持 & / MiniMessage / #RRGGBB；cancel 取消)</gray>");
+                        + "字，不含颜色；支持 & / MiniMessage / #RRGGBB)</gray>");
+                messages.sendRaw(player, "<gray>不想改名？输入</gray> <aqua>c</aqua> <gray>或</gray> <aqua>cancel</aqua> <gray>取消。</gray>");
             }
             case "cycle_scale" -> {
                 pets.cycleScale(data);
@@ -275,6 +325,7 @@ public final class GuiManager implements Listener {
                 refreshManage(player, data);
             }
             case "open_mouth" -> openMouth(player, data);
+            case "open_float" -> openFloat(player, data);
             case "tpa" -> {
                 if (pets.teleportPlayerToPet(player, data)) {
                     messages.send(player, "tpa-success", Map.of("name", data.getInternalName()));
@@ -294,11 +345,24 @@ public final class GuiManager implements Listener {
                 messages.send(player, "mouth-changed", Map.of("name", data.getInternalName(), "item", "无"));
                 refreshMouth(player, data);
             }
-            case "mouth_bone", "mouth_stick", "mouth_rose", "mouth_porkchop", "mouth_diamond", "mouth_sword" -> {
+            case "mouth_bone", "mouth_stick", "mouth_rose", "mouth_porkchop",
+                 "mouth_diamond", "mouth_sword", "mouth_apple", "mouth_cookie" -> {
                 String id = action.substring("mouth_".length());
                 pets.setMouth(data, id);
                 messages.send(player, "mouth-changed", Map.of("name", data.getInternalName(), "item", id));
                 refreshMouth(player, data);
+            }
+            case "float_none" -> {
+                pets.setFloatItem(data, "none");
+                messages.send(player, "float-changed", Map.of("name", data.getInternalName(), "item", "无"));
+                refreshFloat(player, data);
+            }
+            case "float_bone", "float_stick", "float_rose", "float_porkchop",
+                 "float_diamond", "float_sword" -> {
+                String id = action.substring("float_".length());
+                pets.setFloatItem(data, id);
+                messages.send(player, "float-changed", Map.of("name", data.getInternalName(), "item", id));
+                refreshFloat(player, data);
             }
             default -> {
             }
@@ -314,7 +378,7 @@ public final class GuiManager implements Listener {
         if (petId == null) {
             return;
         }
-        if (message.equalsIgnoreCase("cancel")) {
+        if (message.equalsIgnoreCase("cancel") || message.equalsIgnoreCase("c")) {
             messages.sendRaw(player, "<gray>已取消重命名。</gray>");
             return;
         }

@@ -199,7 +199,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
         Player player = (Player) sender;
         if (args.length < 3) {
-            messages.sendRaw(player, "<red>用法: /pet toggle <名字> follow|attack</red>");
+            messages.sendRaw(player, "<red>用法: /pet toggle <名字> follow|attack</red> <gray>(attack=点击攻击)</gray>");
             return;
         }
         PetData data = pets.storage().byOwnerAndName(player.getUniqueId(), args[1]);
@@ -225,14 +225,30 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 ));
             }
             case "attack" -> {
-                if (!data.isAttackEnabled() && data.isInvincible()) {
-                    messages.send(player, "attack-exit-invincible", Map.of("name", data.getInternalName()));
-                    return;
+                PetService.ClickAttackResult result = pets.clickAttack(data);
+                switch (result) {
+                    case INVINCIBLE -> messages.send(player, "attack-blocked-invincible",
+                            Map.of("name", data.getInternalName()));
+                    case ENTITY_MISSING -> messages.send(player, "pet-entity-missing");
+                    case NO_TARGET -> messages.send(player, "attack-no-target", Map.of(
+                            "name", data.getInternalName(),
+                            "range", String.valueOf(config.getAutoRange())
+                    ));
+                    case STARTED -> {
+                        String targetName = "?";
+                        var tid = data.getAttackTargetId();
+                        if (tid != null) {
+                            Player t = Bukkit.getPlayer(tid);
+                            if (t != null) {
+                                targetName = t.getName();
+                            }
+                        }
+                        messages.send(player, "attack-started", Map.of(
+                                "name", data.getInternalName(),
+                                "target", targetName
+                        ));
+                    }
                 }
-                boolean next = !data.isAttackEnabled();
-                pets.setAttackEnabled(data, next);
-                messages.send(player, next ? "toggle-attack-on" : "toggle-attack-off",
-                        Map.of("name", data.getInternalName()));
             }
             default -> messages.sendRaw(player, "<red>只能 toggle follow 或 attack。</red>");
         }

@@ -108,11 +108,13 @@ public final class PetListener implements Listener {
         if (data != null && !top.morndream.mcPets.util.PetDamageBridge.isAllowed()) {
             event.setCancelled(true);
         }
-        if (plugin.getMouthService().isMouthDisplay(event.getEntity())) {
+        if (plugin.getMouthService().isMouthDisplay(event.getEntity())
+                || plugin.getFloatItemService().isFloatDisplay(event.getEntity())) {
             event.setCancelled(true);
         }
     }
 
+    /** 重命名会话：吞掉聊天，不向任何玩家（含自己）广播。 */
     @EventHandler(priority = EventPriority.LOWEST)
     public void onChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
@@ -120,6 +122,7 @@ public final class PetListener implements Listener {
             return;
         }
         event.setCancelled(true);
+        event.viewers().clear();
         String message = PlainTextComponentSerializer.plainText().serialize(event.message());
         SchedulerUtil.run(player, plugin, () -> plugin.getGuiManager().handleRenameChat(player, message));
     }
