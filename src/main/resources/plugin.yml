@@ -6,7 +6,7 @@ load: STARTUP
 authors: [ Morndream Server ]
 website: morndream.top
 folia-supported: true
-softdepend: [ PlayerParticles ]
+softdepend: [ PlayerParticles, PlayerChat ]
 
 commands:
   pet:
