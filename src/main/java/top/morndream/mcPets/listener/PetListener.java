@@ -9,6 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -17,11 +18,14 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import top.morndream.mcPets.McPets;
 import top.morndream.mcPets.model.PetData;
 import top.morndream.mcPets.service.PetService;
 import top.morndream.mcPets.util.SchedulerUtil;
+import top.morndream.mcPets.util.Text;
 
 import java.util.Map;
 import java.util.Set;
@@ -101,6 +105,36 @@ public final class PetListener implements Listener {
         if (data != null) {
             pets.handleDeath(data);
         }
+    }
+
+    /**
+     * 宠物击杀玩家：击杀者显示为「名字(生物id)」，落在翻译句式中间。
+     * 例：xxx被 Fluffy(pig) 杀死了（而非句末再加括号）
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerKilledByPet(PlayerDeathEvent event) {
+        EntityDamageEvent cause = event.getEntity().getLastDamageCause();
+        if (!(cause instanceof EntityDamageByEntityEvent by)) {
+            return;
+        }
+        Entity damager = by.getDamager();
+        PetData data = pets.storage().byEntityId(damager.getUniqueId());
+        if (data == null) {
+            return;
+        }
+        String typeId = damager.getType().getKey().getKey();
+        Component customName = damager.customName();
+        Component petName = customName != null ? customName : Text.parse(data.effectiveDisplayRaw());
+        Component killerLabel = petName.append(Component.text("(" + typeId + ")", NamedTextColor.GRAY));
+
+        // death.attack.mob = "%1$s was slain by %2$s" / "%1$s被%2$s杀死了"
+        Component message = Component.translatable(
+                "death.attack.mob",
+                event.getEntity().displayName(),
+                killerLabel
+        );
+        event.deathMessage(message);
+        event.deathScreenMessageOverride(message);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
