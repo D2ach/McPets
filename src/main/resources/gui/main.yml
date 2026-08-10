@@ -1,0 +1,30 @@
+# 宠物列表面板
+title: "<gradient:#7EE8FA:#80FF72><bold>我的宠物</bold></gradient>"
+size: 54
+
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  name: " "
+
+# 动态填充：每个宠物占一格，从 slots 依次放入
+pet-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
+
+pet-icon:
+  material: BONE
+  name: "<gradient:#A18CD1:#FBC2EB>{name}</gradient>"
+  lore:
+    - "<dark_gray>内部名: {internal}</dark_gray>"
+    - "<gray>类型: <white>{type}</white></gray>"
+    - "<gray>状态: <aqua>{state}</aqua></gray>"
+    - "<gray>模式: <white>{mode}</white></gray>"
+    - ""
+    - "<yellow>点击管理这只宠物</yellow>"
+
+items:
+  close:
+    slot: 49
+    material: BARRIER
+    name: "<red><bold>关闭</bold></red>"
+    lore:
+      - "<gray>关闭此界面</gray>"
+    action: close

@@ -1,0 +1,55 @@
+name: McPets
+version: '${version}'
+main: top.morndream.mcPets.McPets
+api-version: '26.2'
+load: STARTUP
+authors: [ Morndream Server ]
+website: morndream.top
+folia-supported: true
+softdepend: [ PlayerParticles ]
+
+commands:
+  pet:
+    description: McPets 宠物系统主指令
+    usage: /pet <tame|list|delete|toggle|tpa|tph|gui|help>
+    permission: mcpets.use
+
+permissions:
+  mcpets.use:
+    description: 使用 /pet 基础指令
+    default: true
+  mcpets.tame:
+    description: 驯服生物为宠物
+    default: op
+  mcpets.list:
+    description: 查看自己的宠物列表
+    default: true
+  mcpets.list.others:
+    description: 查看其他玩家的宠物列表
+    default: op
+  mcpets.delete:
+    description: 删除/取消驯服宠物
+    default: true
+  mcpets.toggle:
+    description: 切换宠物跟随/攻击
+    default: true
+  mcpets.tpa:
+    description: 传送到宠物身边
+    default: true
+  mcpets.tph:
+    description: 将宠物传送到身边
+    default: true
+  mcpets.gui:
+    description: 打开宠物管理 GUI
+    default: true
+  mcpets.admin:
+    description: 管理权限
+    default: op
+    children:
+      mcpets.tame: true
+      mcpets.list.others: true
+      mcpets.delete: true
+      mcpets.toggle: true
+      mcpets.tpa: true
+      mcpets.tph: true
+      mcpets.gui: true

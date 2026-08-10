@@ -1,0 +1,148 @@
+# McPets 主配置 —— 几乎所有数值都可在此调整
+
+settings:
+  # 驯服准星最大距离
+  tame-range: 8
+  # 交互（Shift+右键）最大距离
+  interact-range: 5
+  # 跟随开始走路的距离 / 传送拉回距离
+  follow-start-distance: 4.0
+  follow-teleport-distance: 16.0
+  follow-speed: 1.2
+  # 漫步半径与间隔（tick）
+  wander-radius: 6.0
+  wander-interval-ticks: 60
+  # 实体丢失时是否提示主人（默认关闭=静默删档）
+  notify-missing-pet: false
+  # 自动保存间隔（秒），0 = 仅在变更/关闭时保存
+  auto-save-seconds: 120
+  # 每个玩家最多可拥有的宠物数量
+  max-pets-per-player: 5
+  # 跟随 AI 执行间隔（tick）；攻击仍用 attack.interval-ticks
+  follow-interval-ticks: 8
+  # 实体疑似丢失时的确认次数 / 间隔（避免未加载区块误删）
+  missing-check-attempts: 3
+  missing-check-interval-ticks: 100
+  # 显示名可见字数上限（不含颜色/格式符号）；内部名仍为 1-16
+  max-display-name-length: 24
+  # 插件被 disable / 热重载时对已存在宠物的处理：
+  # park    = 实体留在世界，关闭无敌/攻击/叼物/AI，保留原版名字，重载后按 pets.yml 实体UUID恢复
+  # despawn = 移除实体并写档，插件再次启用时按存档坐标重新生成（装备等 NBT 不保留）
+  unload-mode: park
+
+blacklist:
+  # 不可驯服的实体类型（Bukkit EntityType 名）
+  - ENDER_DRAGON
+  - WITHER
+  - WARDEN
+  - ARMOR_STAND
+  - PLAYER
+
+attack:
+  enabled-by-default: false
+  # 每次伤害（HP；1.0 = 半颗心）
+  damage: 1.0
+  # 每个目标最多攻击次数（独立计数）
+  max-hits-per-target: 6
+  # 仇恨持续时间（秒）
+  hate-duration-seconds: 60
+  # 自动攻击扫描半径
+  auto-range: 12.0
+  # 指定攻击时，目标与宠物的最大距离
+  command-range: 5.0
+  # 攻击间隔（tick）
+  interval-ticks: 20
+  # 攻击寻路速度
+  speed: 1.35
+
+scale:
+  # 三档缩放（Attribute SCALE）；也可在 GUI 使用原版 baby
+  tiers:
+    - 0.5
+    - 1.0
+    - 2.0
+  default-tier: 1
+
+mouth-item:
+  # 展示实体相对嘴巴的偏移（实体本地前方）
+  offset-forward: 0.35
+  offset-up: 0.15
+  # 展示大小
+  display-scale: 0.45
+
+particles:
+  # 自研预设粒子间隔（tick）
+  interval-ticks: 10
+  presets:
+    none:
+      enabled: false
+    heart:
+      particle: HEART
+      count: 2
+      offset: 0.3
+    flame:
+      particle: FLAME
+      count: 3
+      offset: 0.25
+    enchant:
+      particle: ENCHANT
+      count: 8
+      offset: 0.5
+    note:
+      particle: NOTE
+      count: 2
+      offset: 0.35
+    happy:
+      particle: HAPPY_VILLAGER
+      count: 4
+      offset: 0.4
+
+messages:
+  prefix: "<gradient:#7EE8FA:#80FF72><bold>McPets</bold></gradient> <dark_gray>»</dark_gray> "
+  no-permission: "<red>你没有权限这样做。</red>"
+  player-only: "<red>该指令仅限玩家使用。</red>"
+  unknown-command: "<gray>未知子指令。输入 <aqua>/pet help</aqua> 查看帮助。</gray>"
+  tame-success: "<green>已驯服</green> <white>{name}</white> <gray>({type})</gray><green>！</green>"
+  tame-no-target: "<red>准星前方没有可驯服的生物。</red>"
+  tame-blacklisted: "<red>该生物类型在黑名单中，无法驯服。</red>"
+  tame-already-pet: "<red>这只生物已经是宠物了。</red>"
+  tame-name-taken: "<red>你已有一只叫</red> <white>{name}</white> <red>的宠物。</red>"
+  tame-name-invalid: "<red>名字无效。请使用 1-16 位字母/数字/下划线/中文。</red>"
+  tame-limit: "<red>宠物数量已达上限</red> <white>{max}</white> <red>（当前</red> <white>{count}</white><red>）。</red>"
+  delete-success: "<green>已取消驯服</green> <white>{name}</white><green>。</green>"
+  delete-not-found: "<red>找不到名为</red> <white>{name}</white> <red>的宠物。</red>"
+  list-header: "<gradient:#A18CD1:#FBC2EB><bold>你的宠物</bold></gradient> <dark_gray>({count})</dark_gray>"
+  list-entry: "<dark_gray>•</dark_gray> <white>{name}</white> <gray>({type})</gray> <dark_gray>|</dark_gray> <aqua>{state}</aqua>"
+  list-empty: "<gray>你还没有宠物。用</gray> <aqua>/pet tame <名字></aqua> <gray>驯服一只吧。</gray>"
+  list-other-header: "<gradient:#A18CD1:#FBC2EB><bold>{player}</bold></gradient> <gray>的宠物</gray> <dark_gray>({count})</dark_gray>"
+  toggle-follow: "<green>{name}</green> <gray>状态 →</gray> <aqua>{state}</aqua>"
+  toggle-attack-on: "<green>{name}</green> <gray>攻击模式</gray> <green>已开启</green>"
+  toggle-attack-off: "<green>{name}</green> <gray>攻击模式</gray> <red>已关闭</red>"
+  tpa-success: "<green>已传送到</green> <white>{name}</white> <green>身边。</green>"
+  tph-success: "<green>已将</green> <white>{name}</white> <green>传送到你身边。</green>"
+  pet-not-found: "<red>找不到宠物</red> <white>{name}</white><red>。</red>"
+  pet-entity-missing: "<red>宠物实体不存在或已卸载。</red>"
+  pet-died: "<red>你的宠物</red> <white>{name}</white> <red>已死亡，数据已清除。</red>"
+  pet-missing-notify: "<yellow>宠物</yellow> <white>{name}</white> <yellow>已丢失，已清理存档。</yellow>"
+  gui-no-pets: "<red>你没有可管理的宠物。</red>"
+  invincible-on: "<green>{name}</green> <gray>模式 →</gray> <gold>无敌</gold>"
+  invincible-off: "<green>{name}</green> <gray>模式 →</gray> <aqua>普通</aqua>"
+  ai-on: "<green>{name}</green> <gray>AI →</gray> <green>开启</green>"
+  ai-off: "<green>{name}</green> <gray>AI →</gray> <red>关闭</red>"
+  rename-success: "<green>显示名已更新为</green> {display}"
+  rename-too-long: "<red>显示名过长：可见字数</red> <white>{length}</white><red>/</red><white>{max}</white> <gray>（不含颜色符号）</gray>"
+  scale-changed: "<green>{name}</green> <gray>体型 →</gray> <aqua>{scale}</aqua>"
+  baby-changed: "<green>{name}</green> <gray>幼体 →</gray> <aqua>{baby}</aqua>"
+  particle-changed: "<green>{name}</green> <gray>粒子 →</gray> <aqua>{preset}</aqua>"
+  mouth-changed: "<green>{name}</green> <gray>叼物 →</gray> <aqua>{item}</aqua>"
+  attack-exit-invincible: "<yellow>{name}</yellow> <gray>进入无敌，已退出攻击。</gray>"
+  help:
+    - "<gradient:#7EE8FA:#80FF72><bold>McPets 帮助</bold></gradient>"
+    - "<aqua>/pet tame <名字></aqua> <dark_gray>—</dark_gray> <gray>驯服准星生物</gray>"
+    - "<aqua>/pet list [玩家]</aqua> <dark_gray>—</dark_gray> <gray>宠物列表</gray>"
+    - "<aqua>/pet delete <名字></aqua> <dark_gray>—</dark_gray> <gray>取消驯服</gray>"
+    - "<aqua>/pet toggle <名字> follow|attack</aqua> <dark_gray>—</dark_gray> <gray>切换状态</gray>"
+    - "<aqua>/pet tpa <名字></aqua> <dark_gray>—</dark_gray> <gray>传送到宠物</gray>"
+    - "<aqua>/pet tph <名字></aqua> <dark_gray>—</dark_gray> <gray>宠物传到身边</gray>"
+    - "<aqua>/pet gui [名字]</aqua> <dark_gray>—</dark_gray> <gray>打开管理界面</gray>"
+    - "<gray>Shift+右键宠物也可打开 GUI</gray>"

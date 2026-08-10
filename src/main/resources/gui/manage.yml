@@ -1,0 +1,152 @@
+# 单宠管理主页
+title: "<gradient:#A18CD1:#FBC2EB><bold>{name}</bold></gradient>"
+size: 54
+
+filler:
+  material: BLACK_STAINED_GLASS_PANE
+  name: " "
+
+items:
+  info:
+    slot: 13
+    material: NAME_TAG
+    name: "<gradient:#7EE8FA:#80FF72><bold>{display}</bold></gradient>"
+    lore:
+      - "<dark_gray>内部名: {internal}</dark_gray>"
+      - "<gray>类型: <white>{type}</white></gray>"
+      - "<gray>状态: <aqua>{state}</aqua></gray>"
+      - "<gray>攻击: {attack}</gray>"
+      - "<gray>AI: {ai}</gray>"
+      - "<gray>模式: <white>{mode}</white></gray>"
+      - "<gray>体型: <aqua>{scale}</aqua></gray>"
+      - "<gray>粒子: <aqua>{particle}</aqua></gray>"
+      - "<gray>叼物: <aqua>{mouth}</aqua></gray>"
+    action: none
+
+  state_follow:
+    slot: 28
+    material: LEAD
+    name: "<aqua><bold>跟随</bold></aqua>"
+    lore:
+      - "<gray>切换到跟随状态</gray>"
+      - "<dark_gray>当前: {state}</dark_gray>"
+    action: state_follow
+
+  state_idle:
+    slot: 29
+    material: RED_BED
+    name: "<gold><bold>待命</bold></gold>"
+    lore:
+      - "<gray>原地待命，不主动移动</gray>"
+    action: state_idle
+
+  state_wander:
+    slot: 30
+    material: FEATHER
+    name: "<green><bold>漫步</bold></green>"
+    lore:
+      - "<gray>在附近自由走动</gray>"
+    action: state_wander
+
+  toggle_attack:
+    slot: 31
+    material: IRON_SWORD
+    name: "<red><bold>攻击开关</bold></red>"
+    lore:
+      - "<gray>开启后自动攻击附近玩家</gray>"
+      - "<dark_gray>当前: {attack}</dark_gray>"
+    action: toggle_attack
+
+  toggle_mode:
+    slot: 32
+    material: TOTEM_OF_UNDYING
+    name: "<light_purple><bold>无敌 / 普通</bold></light_purple>"
+    lore:
+      - "<gray>无敌: 不受伤且不攻击</gray>"
+      - "<gray>普通: 可受伤可攻击</gray>"
+      - "<dark_gray>当前: {mode}</dark_gray>"
+    action: toggle_mode
+
+  toggle_ai:
+    slot: 33
+    material: REDSTONE
+    name: "<yellow><bold>AI 开关</bold></yellow>"
+    lore:
+      - "<gray>关闭后宠物完全不移动</gray>"
+      - "<dark_gray>当前: {ai}</dark_gray>"
+    action: toggle_ai
+
+  rename:
+    slot: 34
+    material: WRITABLE_BOOK
+    name: "<aqua><bold>更改显示名</bold></aqua>"
+    lore:
+      - "<gray>支持 & / MiniMessage / #RRGGBB</gray>"
+      - "<gray>可见字数上限 24（不含颜色符号）</gray>"
+      - "<yellow>点击后在聊天中输入新名称</yellow>"
+      - "<dark_gray>输入 cancel 取消</dark_gray>"
+    action: rename
+
+  scale:
+    slot: 37
+    material: SLIME_BALL
+    name: "<green><bold>体型档位</bold></green>"
+    lore:
+      - "<gray>在配置的缩放档位间循环</gray>"
+      - "<dark_gray>当前: {scale}</dark_gray>"
+    action: cycle_scale
+
+  baby:
+    slot: 38
+    material: WHEAT
+    name: "<gold><bold>幼体形态</bold></gold>"
+    lore:
+      - "<gray>仅支持原版有 baby 的生物</gray>"
+      - "<dark_gray>当前: {baby}</dark_gray>"
+    action: toggle_baby
+
+  particle:
+    slot: 39
+    material: BLAZE_POWDER
+    name: "<light_purple><bold>粒子特效</bold></light_purple>"
+    lore:
+      - "<gray>循环切换预设粒子</gray>"
+      - "<dark_gray>当前: {particle}</dark_gray>"
+    action: cycle_particle
+
+  mouth:
+    slot: 40
+    material: BONE
+    name: "<white><bold>叼物</bold></white>"
+    lore:
+      - "<gray>打开叼物选择页</gray>"
+      - "<dark_gray>当前: {mouth}</dark_gray>"
+    action: open_mouth
+
+  tpa:
+    slot: 41
+    material: ENDER_PEARL
+    name: "<dark_aqua><bold>传送到宠物</bold></dark_aqua>"
+    lore:
+      - "<gray>将你传送到宠物身边</gray>"
+    action: tpa
+
+  tph:
+    slot: 42
+    material: CHORUS_FRUIT
+    name: "<dark_purple><bold>宠物传到身边</bold></dark_purple>"
+    lore:
+      - "<gray>将宠物传送到你身边</gray>"
+    action: tph
+
+  back:
+    slot: 45
+    material: ARROW
+    name: "<yellow>返回列表</yellow>"
+    action: back
+
+  close:
+    slot: 49
+    material: BARRIER
+    name: "<red><bold>关闭</bold></red>"
+    action: close
