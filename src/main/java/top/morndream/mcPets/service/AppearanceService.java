@@ -126,7 +126,7 @@ public final class AppearanceService {
         }
         if (data.getVariant() != null && !variants.apply(entity, data.getVariant())) {
             plugin.getLogger().warning("无法套用变种 " + data.getVariant()
-                    + " → 宠物 " + data.getInternalName() + " (" + data.getEntityType() + ")");
+                    + " → 宠物 " + data.getName() + " (" + data.getEntityType() + ")");
         }
         return migrated;
     }
@@ -186,7 +186,7 @@ public final class AppearanceService {
             if (vanilla != null && !vanilla.isBlank()) {
                 if (!variants.apply(entity, vanilla)) {
                     plugin.getLogger().warning("卸载还原变种失败 " + vanilla
-                            + " → 宠物 " + data.getInternalName());
+                            + " → 宠物 " + data.getName());
                 }
             }
         }
@@ -206,7 +206,7 @@ public final class AppearanceService {
         }
         Villager.Profession profession = Registry.VILLAGER_PROFESSION.get(key);
         if (profession == null) {
-            plugin.getLogger().warning("无法还原村民职业 " + raw + " → " + data.getInternalName());
+            plugin.getLogger().warning("无法还原村民职业 " + raw + " → " + data.getName());
             return;
         }
         villager.setProfession(profession);

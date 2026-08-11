@@ -123,7 +123,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
         PetData data = pets.tame(player, living, name);
         messages.send(player, "tame-success", Map.of(
-                "name", data.getInternalName(),
+                "name", data.getName(),
                 "type", data.getEntityType().name()
         ));
     }
@@ -152,7 +152,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             }
             for (PetData data : list) {
                 messages.send(sender, "list-entry", Map.of(
-                        "name", data.getInternalName(),
+                        "name", data.getName(),
                         "type", data.getEntityType() == null ? "?" : data.getEntityType().name(),
                         "state", data.getState().display()
                 ));
@@ -171,7 +171,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
         for (PetData data : list) {
             messages.send(player, "list-entry", Map.of(
-                    "name", data.getInternalName(),
+                    "name", data.getName(),
                     "type", data.getEntityType() == null ? "?" : data.getEntityType().name(),
                     "state", data.getState().display()
             ));
@@ -192,7 +192,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             messages.send(player, "delete-not-found", Map.of("name", args[1]));
             return;
         }
-        String name = data.getInternalName();
+        String name = data.getName();
         pets.delete(data, true);
         messages.send(player, "delete-success", Map.of("name", name));
     }
@@ -224,7 +224,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 }
                 pets.setState(data, next);
                 messages.send(player, "toggle-follow", Map.of(
-                        "name", data.getInternalName(),
+                        "name", data.getName(),
                         "state", next.display()
                 ));
             }
@@ -232,10 +232,10 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                 PetService.ClickAttackResult result = pets.clickAttack(data);
                 switch (result) {
                     case INVINCIBLE -> messages.send(player, "attack-blocked-invincible",
-                            Map.of("name", data.getInternalName()));
+                            Map.of("name", data.getName()));
                     case ENTITY_MISSING -> messages.send(player, "pet-entity-missing");
                     case NO_TARGET -> messages.send(player, "attack-no-target", Map.of(
-                            "name", data.getInternalName(),
+                            "name", data.getName(),
                             "range", String.valueOf(config.getAutoRange())
                     ));
                     case STARTED -> {
@@ -248,7 +248,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                             }
                         }
                         messages.send(player, "attack-started", Map.of(
-                                "name", data.getInternalName(),
+                                "name", data.getName(),
                                 "target", targetName
                         ));
                     }
@@ -273,7 +273,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (pets.teleportPlayerToPet(player, data)) {
-            messages.send(player, "tpa-success", Map.of("name", data.getInternalName()));
+            messages.send(player, "tpa-success", Map.of("name", data.getName()));
         } else {
             messages.send(player, "pet-entity-missing");
         }
@@ -294,7 +294,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (pets.teleportPetToPlayer(player, data)) {
-            messages.send(player, "tph-success", Map.of("name", data.getInternalName()));
+            messages.send(player, "tph-success", Map.of("name", data.getName()));
         } else {
             messages.send(player, "pet-entity-missing");
         }
@@ -337,7 +337,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             return List.of();
         }
         List<String> names = pets.storage().byOwner(player.getUniqueId()).stream()
-                .map(PetData::getInternalName)
+                .map(PetData::getName)
                 .collect(Collectors.toList());
         if (args.length == 2) {
             return switch (args[0].toLowerCase(Locale.ROOT)) {
