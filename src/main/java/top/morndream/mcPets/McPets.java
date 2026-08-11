@@ -106,8 +106,16 @@ public final class McPets extends JavaPlugin {
 
     public void reloadAll() {
         pluginConfig.reload();
+        if (particleService != null) {
+            particleService.reloadCache();
+        }
         guiManager.closeAll();
         guiManager.loadAll();
+        if (petAIManager != null) {
+            // 间隔变更后按新配置重建调度
+            petAIManager.shutdown();
+            petAIManager.start();
+        }
     }
 
     public PluginConfig getPluginConfig() {

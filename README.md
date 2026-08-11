@@ -137,9 +137,19 @@ mvn clean package
 settings:
   max-pets-per-player: 5   # 每人上限；0 = 不限制
   tame-range: 8
+  follow-interval-ticks: 14
   follow-teleport-distance: 16.0
   notify-missing-pet: false
   block-villager-profession: true  # true=有职业村民不可驯服，宠物也不能再就业
+
+performance:
+  far-distance: 48.0           # 超距降频
+  far-interval-ticks: 40
+  offline-interval-ticks: 80   # 主人离线降频
+  watchdog-interval-ticks: 400 # 仅补挂「无任务+主人在线」
+
+particles:
+  interval-ticks: 16           # 预设在 reload 时缓存
 
 blacklist:
   - ENDER_DRAGON

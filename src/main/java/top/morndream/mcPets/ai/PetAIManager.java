@@ -12,6 +12,7 @@ import top.morndream.mcPets.config.PluginConfig;
 import top.morndream.mcPets.model.PetData;
 import top.morndream.mcPets.model.PetState;
 import top.morndream.mcPets.service.PetService;
+import top.morndream.mcPets.util.CosmeticItems;
 import top.morndream.mcPets.util.PetDamageBridge;
 import top.morndream.mcPets.util.SchedulerUtil;
 
@@ -22,9 +23,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Folia 安全 AI：
- * - FOLLOW / WANDER：较长间隔
- * - ATTACK：较短间隔
- * - IDLE / AI 关闭：停掉运动 timer（有粒子时仅保留慢速粒子任务）
+ * - FOLLOW / WANDER：较长间隔；攻击用短间隔
+ * - IDLE / 无敌且无粒子/悬浮：不挂 timer
+ * - 主人离线或过远：降频，只做保活校验
  */
 public final class PetAIManager {
 
@@ -33,6 +34,8 @@ public final class PetAIManager {
     private final PluginConfig config;
     private final Map<UUID, ScheduledTask> tasks = new ConcurrentHashMap<>();
     private final Map<UUID, Long> ticks = new ConcurrentHashMap<>();
+    /** 上一 tick 是否处于降频态，用于切换时 rebuild period */
+    private final Map<UUID, Boolean> dormantFlags = new ConcurrentHashMap<>();
     private ScheduledTask watchdog;
 
     public PetAIManager(McPets plugin) {
@@ -43,7 +46,8 @@ public final class PetAIManager {
 
     public void start() {
         attachAllLoaded();
-        watchdog = SchedulerUtil.runGlobalTimer(plugin, this::attachAllLoaded, 100L, 100L);
+        long period = Math.max(40L, config.getWatchdogIntervalTicks());
+        watchdog = SchedulerUtil.runGlobalTimer(plugin, this::attachOnlineMissing, period, period);
     }
 
     public void shutdown() {
@@ -56,11 +60,32 @@ public final class PetAIManager {
         }
         tasks.clear();
         ticks.clear();
+        dormantFlags.clear();
     }
 
+    /** 启用时全量补挂一次（含主人离线的在世宠物）。 */
     public void attachAllLoaded() {
         for (PetData data : pets.storage().all()) {
             if (tasks.containsKey(data.getPetId())) {
+                continue;
+            }
+            LivingEntity entity = pets.findEntity(data);
+            if (entity != null) {
+                resync(data, entity);
+            }
+        }
+    }
+
+    /**
+     * 定时补挂：只扫「尚无 AI 任务」且「主人在线」的宠物，避免全表 getEntity。
+     */
+    public void attachOnlineMissing() {
+        for (PetData data : pets.storage().all()) {
+            if (tasks.containsKey(data.getPetId())) {
+                continue;
+            }
+            Player owner = Bukkit.getPlayer(data.getOwnerId());
+            if (owner == null || !owner.isOnline()) {
                 continue;
             }
             LivingEntity entity = pets.findEntity(data);
@@ -106,9 +131,12 @@ public final class PetAIManager {
         if (!motion) {
             handleIdle(entity);
             if (!light) {
+                // 无敌/待命 + none 粒子 + 无悬浮浮动：完全不挂 timer
                 return;
             }
-            long period = Math.max(1L, config.getParticleInterval());
+            boolean dormant = isDormant(data, entity);
+            dormantFlags.put(data.getPetId(), dormant);
+            long period = resolveLightPeriod(data, dormant);
             ScheduledTask task = SchedulerUtil.runTimer(entity, plugin, _ -> tickLight(data.getPetId()), period, period);
             if (task != null) {
                 tasks.put(data.getPetId(), task);
@@ -117,7 +145,9 @@ public final class PetAIManager {
             return;
         }
 
-        long period = resolvePeriod(data);
+        boolean dormant = isDormant(data, entity);
+        dormantFlags.put(data.getPetId(), dormant);
+        long period = resolvePeriod(data, dormant);
         ScheduledTask task = SchedulerUtil.runTimer(entity, plugin, _ -> tickPet(data.getPetId()), period, period);
         if (task != null) {
             tasks.put(data.getPetId(), task);
@@ -134,26 +164,66 @@ public final class PetAIManager {
     }
 
     private boolean hasParticles(PetData data) {
-        String p = data.getParticlePreset();
-        return p != null && !p.equalsIgnoreCase("none");
+        return plugin.getParticleService().isActivePreset(data.getParticlePreset());
     }
 
     private boolean needsLightTick(PetData data) {
         if (hasParticles(data)) {
             return true;
         }
-        // 悬浮物仅在开启浮动时需要慢速 tick；关闭浮动则乘客自然跟随，不占调度
-        return config.isFloatBob() && !top.morndream.mcPets.util.CosmeticItems.isNone(data.getFloatItem());
+        // 悬浮物仅在开启浮动时需要慢速 tick；none / 关闭浮动不占调度
+        return config.isFloatBob() && !CosmeticItems.isNone(data.getFloatItem());
     }
 
-    private long resolvePeriod(PetData data) {
+    private boolean isOwnerOnline(PetData data) {
+        Player owner = Bukkit.getPlayer(data.getOwnerId());
+        return owner != null && owner.isOnline();
+    }
+
+    private boolean isFarFromOwner(PetData data, LivingEntity entity) {
+        Player owner = Bukkit.getPlayer(data.getOwnerId());
+        if (owner == null || !owner.isOnline()) {
+            return false;
+        }
+        if (!owner.getWorld().equals(entity.getWorld())) {
+            return true;
+        }
+        return entity.getLocation().distanceSquared(owner.getLocation()) > config.getFarDistanceSq();
+    }
+
+    /** 主人离线或过远：降频态（攻击中不降频）。 */
+    private boolean isDormant(PetData data, LivingEntity entity) {
+        if (data.isAttackEnabled() && !data.isInvincible()) {
+            return false;
+        }
+        if (!isOwnerOnline(data)) {
+            return true;
+        }
+        return isFarFromOwner(data, entity);
+    }
+
+    private long resolvePeriod(PetData data, boolean dormant) {
         if (data.isAttackEnabled() && !data.isInvincible()) {
             return Math.max(1L, config.getAttackInterval());
+        }
+        if (dormant) {
+            return Math.max(1L, isOwnerOnline(data)
+                    ? config.getFarIntervalTicks()
+                    : config.getOfflineIntervalTicks());
         }
         if (data.getState() == PetState.WANDER) {
             return Math.max(1L, config.getWanderInterval());
         }
         return Math.max(1L, config.getFollowIntervalTicks());
+    }
+
+    private long resolveLightPeriod(PetData data, boolean dormant) {
+        if (dormant) {
+            return Math.max(1L, isOwnerOnline(data)
+                    ? config.getFarIntervalTicks()
+                    : config.getOfflineIntervalTicks());
+        }
+        return Math.max(1L, config.getParticleInterval());
     }
 
     public void stop(UUID petId) {
@@ -162,6 +232,7 @@ public final class PetAIManager {
             task.cancel();
         }
         ticks.remove(petId);
+        dormantFlags.remove(petId);
     }
 
     private void tickLight(UUID petId) {
@@ -182,14 +253,27 @@ public final class PetAIManager {
             stop(petId);
             return;
         }
+        if (!needsLightTick(data)) {
+            stop(petId);
+            return;
+        }
+
+        boolean dormant = isDormant(data, entity);
+        Boolean prev = dormantFlags.put(petId, dormant);
+        if (prev != null && prev != dormant) {
+            resync(data, entity);
+            return;
+        }
+
         ticks.merge(petId, 1L, Long::sum);
+        if (dormant) {
+            // 降频：不刷粒子、不更新悬浮浮动
+            return;
+        }
         if (hasParticles(data)) {
             plugin.getParticleService().tickEntity(entity, data);
         }
         plugin.getFloatItemService().tick(entity, data, ticks.getOrDefault(petId, 0L));
-        if (!needsLightTick(data)) {
-            stop(petId);
-        }
     }
 
     private void tickPet(UUID petId) {
@@ -210,9 +294,26 @@ public final class PetAIManager {
             return;
         }
 
+        boolean dormant = isDormant(data, entity);
+        Boolean prev = dormantFlags.put(petId, dormant);
+        if (prev != null && prev != dormant) {
+            resync(data, entity);
+            return;
+        }
+
         ticks.merge(petId, 1L, Long::sum);
+
+        if (dormant) {
+            // 降频保活：偶尔写坐标；不跟随、不粒子、不悬浮
+            if (ticks.getOrDefault(petId, 0L) % 5 == 0) {
+                pets.snapshotLocation(data, entity);
+            }
+            handleIdle(entity);
+            return;
+        }
+
         pets.snapshotLocation(data, entity);
-        if (ticks.getOrDefault(petId, 0L) % 25 == 0) {
+        if (ticks.getOrDefault(petId, 0L) % 40 == 0) {
             pets.storage().markDirty();
         }
 

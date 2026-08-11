@@ -20,7 +20,7 @@ settings:
   # 每个玩家最多可拥有的宠物数量
   max-pets-per-player: 5
   # 跟随 AI 执行间隔（tick）；攻击仍用 attack.interval-ticks
-  follow-interval-ticks: 8
+  follow-interval-ticks: 14
   # 实体疑似丢失时的确认次数 / 间隔（避免未加载区块误删）
   missing-check-attempts: 3
   missing-check-interval-ticks: 100
@@ -34,6 +34,17 @@ settings:
   # park    = 实体留在世界，关闭无敌/攻击/叼物/AI，保留原版名字，重载后按 pets.yml 实体UUID恢复
   # despawn = 移除实体并写档，插件再次启用时按存档坐标重新生成（装备等 NBT 不保留）
   unload-mode: park
+
+# 性能：距离/离线降频与 AI 补挂扫描
+performance:
+  # 主人距离超过此格：降频（不跟随/不粒子，仅慢速保活）
+  far-distance: 48.0
+  # 远处 AI 间隔（tick）
+  far-interval-ticks: 40
+  # 主人离线时 AI 间隔（tick）
+  offline-interval-ticks: 80
+  # 全局补挂扫描间隔（tick）；只扫「无任务且主人在线」的宠物
+  watchdog-interval-ticks: 400
 
 blacklist:
   # 不可驯服的实体类型（Bukkit EntityType 名）
@@ -82,8 +93,8 @@ float-item:
   bob-amplitude: 0.08
 
 particles:
-  # 自研预设粒子间隔（tick）
-  interval-ticks: 10
+  # 自研预设粒子间隔（tick）；预设在 reload 时缓存，tick 不再读 YAML
+  interval-ticks: 16
   presets:
     none:
       enabled: false

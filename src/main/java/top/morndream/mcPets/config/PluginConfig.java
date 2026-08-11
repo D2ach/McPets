@@ -60,6 +60,10 @@ public final class PluginConfig {
     private boolean floatBob;
     private double floatBobAmplitude;
     private int particleInterval;
+    private double farDistanceSq;
+    private int farIntervalTicks;
+    private int offlineIntervalTicks;
+    private int watchdogIntervalTicks;
 
     public PluginConfig(McPets plugin) {
         this.plugin = plugin;
@@ -81,13 +85,19 @@ public final class PluginConfig {
         notifyMissing = config.getBoolean("settings.notify-missing-pet", false);
         autoSaveSeconds = config.getInt("settings.auto-save-seconds", 120);
         maxPetsPerPlayer = Math.max(0, config.getInt("settings.max-pets-per-player", 5));
-        followIntervalTicks = Math.max(1, config.getInt("settings.follow-interval-ticks", 8));
+        followIntervalTicks = Math.max(1, config.getInt("settings.follow-interval-ticks", 14));
         missingCheckAttempts = Math.max(1, config.getInt("settings.missing-check-attempts", 3));
         missingCheckIntervalTicks = Math.max(20, config.getInt("settings.missing-check-interval-ticks", 100));
         unloadMode = UnloadMode.fromConfig(config.getString("settings.unload-mode", "park"));
         maxDisplayNameLength = Math.max(1, config.getInt("settings.max-display-name-length", 24));
         defaultInvincible = config.getBoolean("settings.default-invincible", true);
         blockVillagerProfession = config.getBoolean("settings.block-villager-profession", true);
+
+        double farDistance = Math.max(8.0, config.getDouble("performance.far-distance", 48.0));
+        farDistanceSq = farDistance * farDistance;
+        farIntervalTicks = Math.max(1, config.getInt("performance.far-interval-ticks", 40));
+        offlineIntervalTicks = Math.max(1, config.getInt("performance.offline-interval-ticks", 80));
+        watchdogIntervalTicks = Math.max(40, config.getInt("performance.watchdog-interval-ticks", 400));
 
         Set<EntityType> types = new HashSet<>();
         for (String raw : config.getStringList("blacklist")) {
@@ -124,7 +134,7 @@ public final class PluginConfig {
         floatDisplayScale = (float) config.getDouble("float-item.display-scale", 0.5);
         floatBob = config.getBoolean("float-item.bob", true);
         floatBobAmplitude = config.getDouble("float-item.bob-amplitude", 0.08);
-        particleInterval = config.getInt("particles.interval-ticks", 10);
+        particleInterval = Math.max(1, config.getInt("particles.interval-ticks", 16));
     }
 
     private void reloadMessages() {
@@ -319,6 +329,22 @@ public final class PluginConfig {
 
     public int getParticleInterval() {
         return particleInterval;
+    }
+
+    public double getFarDistanceSq() {
+        return farDistanceSq;
+    }
+
+    public int getFarIntervalTicks() {
+        return farIntervalTicks;
+    }
+
+    public int getOfflineIntervalTicks() {
+        return offlineIntervalTicks;
+    }
+
+    public int getWatchdogIntervalTicks() {
+        return watchdogIntervalTicks;
     }
 
     public List<String> particlePresetIds() {
