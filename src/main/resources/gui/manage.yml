@@ -10,9 +10,8 @@ items:
   info:
     slot: 13
     material: NAME_TAG
-    name: "<gradient:#7EE8FA:#80FF72><bold>{display}</bold></gradient>"
+    name: "<gradient:#7EE8FA:#80FF72><bold>{name}</bold></gradient>"
     lore:
-      - "<dark_gray>内部名: {internal}</dark_gray>"
       - "<gray>类型: <white>{type}</white></gray>"
       - "<gray>状态: <aqua>{state}</aqua></gray>"
       - "<gray>战斗: {attack}</gray>"
@@ -82,8 +81,9 @@ items:
   rename:
     slot: 34
     material: WRITABLE_BOOK
-    name: "<aqua><bold>更改显示名</bold></aqua>"
+    name: "<aqua><bold>更改名称</bold></aqua>"
     lore:
+      - "<gray>改完后名称即为此名（无内外之分）</gray>"
       - "<gray>支持 & / MiniMessage / #RRGGBB</gray>"
       - "<gray>可见字数上限 24（不含颜色符号）</gray>"
       - "<yellow>点击后在聊天中输入新名称</yellow>"

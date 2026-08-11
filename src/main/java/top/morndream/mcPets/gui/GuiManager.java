@@ -110,7 +110,7 @@ public final class GuiManager implements Listener {
         VariantService variants = plugin.getVariantService();
         List<VariantService.Option> options = variants.list(data.getEntityType());
         if (options.isEmpty()) {
-            messages.send(player, "variant-unsupported", Map.of("name", data.getInternalName()));
+            messages.send(player, "variant-unsupported", Map.of("name", data.getName()));
             return;
         }
         GuiDefinition def = definitions.get("variant");
@@ -253,9 +253,9 @@ public final class GuiManager implements Listener {
 
     private Map<String, String> placeholders(PetData data) {
         Map<String, String> map = new HashMap<>();
-        map.put("name", data.getInternalName());
-        map.put("internal", data.getInternalName());
-        map.put("display", data.effectiveDisplayRaw());
+        map.put("name", data.getName());
+        map.put("internal", data.getName());
+        map.put("display", data.getName());
         map.put("type", data.getEntityType() == null ? "?" : data.getEntityType().name());
         map.put("state", data.getState().display());
         if (data.isAttackEnabled() && data.getAttackTargetId() != null) {
@@ -353,7 +353,7 @@ public final class GuiManager implements Listener {
                     }
                 }
                 messages.send(player, "variant-changed", Map.of(
-                        "name", data.getInternalName(),
+                        "name", data.getName(),
                         "variant", label
                 ));
                 refreshVariant(player, data);
@@ -404,27 +404,27 @@ public final class GuiManager implements Listener {
         switch (action) {
             case "state_follow" -> {
                 pets.setState(data, PetState.FOLLOW);
-                messages.send(player, "toggle-follow", Map.of("name", data.getInternalName(), "state", "跟随"));
+                messages.send(player, "toggle-follow", Map.of("name", data.getName(), "state", "跟随"));
                 refreshManage(player, data);
             }
             case "state_idle" -> {
                 pets.setState(data, PetState.IDLE);
-                messages.send(player, "toggle-follow", Map.of("name", data.getInternalName(), "state", "待命"));
+                messages.send(player, "toggle-follow", Map.of("name", data.getName(), "state", "待命"));
                 refreshManage(player, data);
             }
             case "state_wander" -> {
                 pets.setState(data, PetState.WANDER);
-                messages.send(player, "toggle-follow", Map.of("name", data.getInternalName(), "state", "漫步"));
+                messages.send(player, "toggle-follow", Map.of("name", data.getName(), "state", "漫步"));
                 refreshManage(player, data);
             }
             case "toggle_attack", "click_attack" -> {
                 PetService.ClickAttackResult result = pets.clickAttack(data);
                 switch (result) {
                     case INVINCIBLE -> messages.send(player, "attack-blocked-invincible",
-                            Map.of("name", data.getInternalName()));
+                            Map.of("name", data.getName()));
                     case ENTITY_MISSING -> messages.send(player, "pet-entity-missing");
                     case NO_TARGET -> messages.send(player, "attack-no-target",
-                            Map.of("name", data.getInternalName(),
+                            Map.of("name", data.getName(),
                                     "range", String.valueOf(plugin.getPluginConfig().getAutoRange())));
                     case STARTED -> {
                         String targetName = "?";
@@ -436,7 +436,7 @@ public final class GuiManager implements Listener {
                             }
                         }
                         messages.send(player, "attack-started", Map.of(
-                                "name", data.getInternalName(),
+                                "name", data.getName(),
                                 "target", targetName
                         ));
                     }
@@ -446,27 +446,27 @@ public final class GuiManager implements Listener {
             case "toggle_mode" -> {
                 pets.setInvincible(data, !data.isInvincible());
                 messages.send(player, data.isInvincible() ? "invincible-on" : "invincible-off",
-                        Map.of("name", data.getInternalName()));
+                        Map.of("name", data.getName()));
                 refreshManage(player, data);
             }
             case "toggle_ai" -> {
                 pets.setAiEnabled(data, !data.isAiEnabled());
                 messages.send(player, data.isAiEnabled() ? "ai-on" : "ai-off",
-                        Map.of("name", data.getInternalName()));
+                        Map.of("name", data.getName()));
                 refreshManage(player, data);
             }
             case "rename" -> {
                 renameSessions.put(player.getUniqueId(), data.getPetId());
                 player.closeInventory();
-                messages.sendRaw(player, "<gradient:#7EE8FA:#80FF72>请在聊天中输入新的显示名</gradient> <gray>(可见≤"
+                messages.sendRaw(player, "<gradient:#7EE8FA:#80FF72>请在聊天中输入新名称</gradient> <gray>(可见≤"
                         + plugin.getPluginConfig().getMaxDisplayNameLength()
                         + "字，不含颜色；支持 & / MiniMessage / #RRGGBB)</gray>");
-                messages.sendRaw(player, "<gray>不想改名？输入</gray> <aqua>c</aqua> <gray>或</gray> <aqua>cancel</aqua> <gray>取消。</gray>");
+                messages.sendRaw(player, "<gray>改完后名称即为此名。输入</gray> <aqua>c</aqua> <gray>或</gray> <aqua>cancel</aqua> <gray>取消。</gray>");
             }
             case "cycle_scale" -> {
                 pets.cycleScale(data);
                 messages.send(player, "scale-changed", Map.of(
-                        "name", data.getInternalName(),
+                        "name", data.getName(),
                         "scale", String.valueOf(plugin.getPluginConfig().scaleValue(data.getScaleTier()))
                 ));
                 refreshManage(player, data);
@@ -477,7 +477,7 @@ public final class GuiManager implements Listener {
                     return;
                 }
                 messages.send(player, "baby-changed", Map.of(
-                        "name", data.getInternalName(),
+                        "name", data.getName(),
                         "baby", data.isBaby() ? "是" : "否"
                 ));
                 refreshManage(player, data);
@@ -485,7 +485,7 @@ public final class GuiManager implements Listener {
             case "cycle_particle" -> {
                 pets.cycleParticle(data);
                 messages.send(player, "particle-changed", Map.of(
-                        "name", data.getInternalName(),
+                        "name", data.getName(),
                         "preset", data.getParticlePreset()
                 ));
                 refreshManage(player, data);
@@ -494,28 +494,28 @@ public final class GuiManager implements Listener {
             case "open_variant" -> openVariant(player, data);
             case "tpa" -> {
                 if (pets.teleportPlayerToPet(player, data)) {
-                    messages.send(player, "tpa-success", Map.of("name", data.getInternalName()));
+                    messages.send(player, "tpa-success", Map.of("name", data.getName()));
                 } else {
                     messages.send(player, "pet-entity-missing");
                 }
             }
             case "tph" -> {
                 if (pets.teleportPetToPlayer(player, data)) {
-                    messages.send(player, "tph-success", Map.of("name", data.getInternalName()));
+                    messages.send(player, "tph-success", Map.of("name", data.getName()));
                 } else {
                     messages.send(player, "pet-entity-missing");
                 }
             }
             case "float_none" -> {
                 pets.setFloatItem(data, "none");
-                messages.send(player, "float-changed", Map.of("name", data.getInternalName(), "item", "无"));
+                messages.send(player, "float-changed", Map.of("name", data.getName(), "item", "无"));
                 refreshFloat(player, data);
             }
             case "float_bone", "float_stick", "float_rose", "float_porkchop",
                  "float_diamond", "float_sword" -> {
                 String id = action.substring("float_".length());
                 pets.setFloatItem(data, id);
-                messages.send(player, "float-changed", Map.of("name", data.getInternalName(), "item", id));
+                messages.send(player, "float-changed", Map.of("name", data.getName(), "item", id));
                 refreshFloat(player, data);
             }
             default -> {
@@ -540,15 +540,20 @@ public final class GuiManager implements Listener {
         if (data == null || !data.getOwnerId().equals(player.getUniqueId())) {
             return;
         }
-        if (!pets.setDisplayName(data, message)) {
-            messages.send(player, "rename-too-long", Map.of(
-                    "max", String.valueOf(plugin.getPluginConfig().getMaxDisplayNameLength()),
-                    "length", String.valueOf(Text.plainLength(message))
-            ));
+        if (!pets.setName(data, message)) {
+            if (Text.plainLength(message) == 0
+                    || Text.plainLength(message) > plugin.getPluginConfig().getMaxDisplayNameLength()) {
+                messages.send(player, "rename-too-long", Map.of(
+                        "max", String.valueOf(plugin.getPluginConfig().getMaxDisplayNameLength()),
+                        "length", String.valueOf(Text.plainLength(message))
+                ));
+            } else {
+                messages.send(player, "rename-name-taken", Map.of("name", message));
+            }
             renameSessions.put(player.getUniqueId(), petId);
             return;
         }
-        messages.send(player, "rename-success", Map.of("display", message));
+        messages.send(player, "rename-success", Map.of("name", message));
         top.morndream.mcPets.util.SchedulerUtil.run(player, plugin, () -> openManage(player, data));
     }
 

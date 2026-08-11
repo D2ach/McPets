@@ -5,12 +5,14 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import top.morndream.mcPets.McPets;
 import top.morndream.mcPets.model.PetData;
+import top.morndream.mcPets.util.Text;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -109,7 +111,7 @@ public final class PetStorage {
         entityToPet.put(data.getEntityId(), data.getPetId());
         ownerNameIndex
                 .computeIfAbsent(data.getOwnerId(), _ -> new ConcurrentHashMap<>())
-                .put(data.getInternalName().toLowerCase(), data.getPetId());
+                .put(nameKey(data.getName()), data.getPetId());
     }
 
     private void unindex(PetData data) {
@@ -117,11 +119,29 @@ public final class PetStorage {
         entityToPet.remove(data.getEntityId());
         Map<String, UUID> names = ownerNameIndex.get(data.getOwnerId());
         if (names != null) {
-            names.remove(data.getInternalName().toLowerCase());
+            names.remove(nameKey(data.getName()));
             if (names.isEmpty()) {
                 ownerNameIndex.remove(data.getOwnerId());
             }
         }
+    }
+
+    /** 改名时更新主人名索引（按可见纯文本，忽略大小写）。 */
+    public void reindexName(PetData data, String previousName) {
+        Map<String, UUID> names = ownerNameIndex.computeIfAbsent(data.getOwnerId(), _ -> new ConcurrentHashMap<>());
+        if (previousName != null) {
+            names.remove(nameKey(previousName));
+        }
+        names.put(nameKey(data.getName()), data.getPetId());
+        markDirty();
+    }
+
+    private static String nameKey(String raw) {
+        String plain = Text.plain(raw);
+        if (plain.isEmpty() && raw != null) {
+            plain = raw;
+        }
+        return plain.toLowerCase(Locale.ROOT);
     }
 
     public void add(PetData data) {
@@ -158,13 +178,13 @@ public final class PetStorage {
         if (names == null) {
             return null;
         }
-        UUID id = names.get(name.toLowerCase());
+        UUID id = names.get(nameKey(name));
         return id == null ? null : byPetId.get(id);
     }
 
     public boolean hasName(UUID owner, String name) {
         Map<String, UUID> names = ownerNameIndex.get(owner);
-        return names != null && names.containsKey(name.toLowerCase());
+        return names != null && names.containsKey(nameKey(name));
     }
 
     public List<PetData> byOwner(UUID owner) {

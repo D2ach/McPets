@@ -15,8 +15,8 @@ public final class PetData {
     private final UUID petId;
     private UUID ownerId;
     private UUID entityId;
-    private String internalName;
-    private String displayName;
+    /** 唯一名称（可含颜色）；指令查找按可见纯文本 */
+    private String name;
     private EntityType entityType;
     private PetState state = PetState.FOLLOW;
     private boolean attackEnabled;
@@ -80,20 +80,16 @@ public final class PetData {
         this.entityId = entityId;
     }
 
-    public String getInternalName() {
-        return internalName;
+    public String getName() {
+        return name;
     }
 
-    public void setInternalName(String internalName) {
-        this.internalName = internalName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String effectiveDisplayRaw() {
-        return displayName == null || displayName.isBlank() ? internalName : displayName;
+        return name == null || name.isBlank() ? "pet" : name;
     }
 
     public EntityType getEntityType() {
@@ -319,8 +315,7 @@ public final class PetData {
         section.set("pet-id", petId.toString());
         section.set("owner", ownerId.toString());
         section.set("entity", entityId.toString());
-        section.set("internal-name", internalName);
-        section.set("display-name", displayName);
+        section.set("name", name);
         section.set("type", entityType == null ? null : entityType.name());
         section.set("state", state.name());
         section.set("attack-enabled", attackEnabled);
@@ -359,8 +354,17 @@ public final class PetData {
         }
         data.ownerId = UUID.fromString(ownerRaw);
         data.entityId = UUID.fromString(entityRaw);
-        data.internalName = section.getString("internal-name", "pet");
-        data.displayName = section.getString("display-name");
+        // 合并后仅 name；旧档优先 display-name，否则 internal-name
+        String merged = section.getString("name");
+        if (merged == null || merged.isBlank()) {
+            String legacyDisplay = section.getString("display-name");
+            if (legacyDisplay != null && !legacyDisplay.isBlank()) {
+                merged = legacyDisplay;
+            } else {
+                merged = section.getString("internal-name", "pet");
+            }
+        }
+        data.name = merged;
         String type = section.getString("type");
         if (type != null) {
             try {

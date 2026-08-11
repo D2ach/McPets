@@ -66,13 +66,12 @@ public final class PetService {
                 && !Villager.Profession.NITWIT.equals(profession);
     }
 
-    public PetData tame(Player owner, LivingEntity target, String internalName) {
+    public PetData tame(Player owner, LivingEntity target, String petName) {
         UUID petId = UUID.randomUUID();
         PetData data = new PetData(petId);
         data.setOwnerId(owner.getUniqueId());
         data.setEntityId(target.getUniqueId());
-        data.setInternalName(internalName);
-        data.setDisplayName(null);
+        data.setName(petName);
         data.setEntityType(target.getType());
         data.setState(PetState.FOLLOW);
         data.setAttackEnabled(config.isAttackDefault());
@@ -140,7 +139,7 @@ public final class PetService {
         Player owner = Bukkit.getPlayer(data.getOwnerId());
         if (owner != null) {
             SchedulerUtil.run(owner, plugin,
-                    () -> messages.send(owner, "pet-died", Map.of("name", data.getInternalName())));
+                    () -> messages.send(owner, "pet-died", Map.of("name", data.getName())));
         }
         storage.remove(data);
         storage.flush();
@@ -280,7 +279,7 @@ public final class PetService {
                 Player owner = Bukkit.getPlayer(data.getOwnerId());
                 if (owner != null) {
                     SchedulerUtil.run(owner, plugin, () -> messages.send(owner, "attack-exit-invincible",
-                            Map.of("name", data.getInternalName())));
+                            Map.of("name", data.getName())));
                 }
             }
         }
@@ -416,28 +415,33 @@ public final class PetService {
 
     public boolean isValidDisplayName(String raw) {
         if (raw == null || raw.isBlank()) {
-            return true;
+            return false;
         }
-        return Text.plainLength(raw) <= config.getMaxDisplayNameLength();
+        return Text.plainLength(raw) <= config.getMaxDisplayNameLength()
+                && Text.plainLength(raw) >= 1;
     }
 
     /**
-     * @return false 若可见字数超限（不含颜色符号）
+     * 改名：写入唯一 name 字段（改完是什么就是什么）。
+     *
+     * @return false 若可见字数超限、为空，或与同主人其它宠物重名
      */
-    public boolean setDisplayName(PetData data, String raw) {
+    public boolean setName(PetData data, String raw) {
         if (!isValidDisplayName(raw)) {
             return false;
         }
-        if (raw == null || Text.plainLength(raw) == 0) {
-            data.setDisplayName(null);
-        } else {
-            data.setDisplayName(raw);
+        String plain = Text.plain(raw);
+        PetData conflict = storage.byOwnerAndName(data.getOwnerId(), plain);
+        if (conflict != null && !conflict.getPetId().equals(data.getPetId())) {
+            return false;
         }
+        String previous = data.getName();
+        data.setName(raw);
+        storage.reindexName(data, previous);
         LivingEntity entity = findEntity(data);
         if (entity != null) {
             SchedulerUtil.run(entity, plugin, () -> applyOwnerVisual(entity, data));
         }
-        storage.markDirty();
         return true;
     }
 
@@ -542,7 +546,7 @@ public final class PetService {
             if (waits > 60) {
                 pendingMissingChecks.remove(petId);
                 unloadWaitCounts.remove(petId);
-                plugin.getLogger().info("宠物 " + data.getInternalName() + " 所在区块长期未加载，暂停丢失检测（下次上线再查）。");
+                plugin.getLogger().info("宠物 " + data.getName() + " 所在区块长期未加载，暂停丢失检测（下次上线再查）。");
                 return;
             }
             scheduleMissingCheck(data, attempt);
@@ -591,7 +595,7 @@ public final class PetService {
         Player owner = Bukkit.getPlayer(data.getOwnerId());
         if (owner != null && config.isNotifyMissing()) {
             SchedulerUtil.run(owner, plugin, () ->
-                    messages.send(owner, "pet-missing-notify", Map.of("name", data.getInternalName())));
+                    messages.send(owner, "pet-missing-notify", Map.of("name", data.getName())));
         }
         if (plugin.getPetAIManager() != null) {
             plugin.getPetAIManager().stop(petId);
@@ -674,7 +678,7 @@ public final class PetService {
                 }
                 handled++;
             } catch (Exception ex) {
-                plugin.getLogger().warning("卸载处理宠物失败 " + data.getInternalName() + ": " + ex.getMessage());
+                plugin.getLogger().warning("卸载处理宠物失败 " + data.getName() + ": " + ex.getMessage());
             }
         }
         storage.markDirty();
@@ -741,7 +745,7 @@ public final class PetService {
             storage.flush();
             return true;
         } catch (Exception ex) {
-            plugin.getLogger().warning("无法重新生成宠物 " + data.getInternalName() + ": " + ex.getMessage());
+            plugin.getLogger().warning("无法重新生成宠物 " + data.getName() + ": " + ex.getMessage());
             return false;
         }
     }
