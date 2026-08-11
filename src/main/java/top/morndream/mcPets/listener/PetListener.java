@@ -66,6 +66,9 @@ public final class PetListener implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         plugin.getGuiManager().onClose(id);
+        if (plugin.getTransferService() != null) {
+            plugin.getTransferService().clearPlayer(id);
+        }
         suppressChatBroadcast.remove(id);
         renameCaptureAt.remove(id);
     }

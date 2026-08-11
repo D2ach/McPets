@@ -11,7 +11,7 @@ softdepend: [ PlayerParticles, PlayerChat ]
 commands:
   pet:
     description: McPets 宠物系统主指令
-    usage: /pet <tame|list|delete|toggle|tpa|tph|gui|help>
+    usage: /pet <tame|list|delete|toggle|tpa|tph|gui|transfer|help>
     permission: mcpets.use
 
 permissions:
@@ -42,6 +42,9 @@ permissions:
   mcpets.gui:
     description: 打开宠物管理 GUI
     default: true
+  mcpets.transfer:
+    description: 将宠物转让给其他玩家
+    default: true
   mcpets.admin:
     description: 管理权限
     default: op
@@ -53,3 +56,4 @@ permissions:
       mcpets.tpa: true
       mcpets.tph: true
       mcpets.gui: true
+      mcpets.transfer: true

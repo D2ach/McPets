@@ -16,6 +16,8 @@ import top.morndream.mcPets.model.PetData;
 import top.morndream.mcPets.model.PetState;
 import top.morndream.mcPets.service.MessageService;
 import top.morndream.mcPets.service.PetService;
+import top.morndream.mcPets.service.TransferService;
+import top.morndream.mcPets.util.Text;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,12 +32,14 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
     private final PetService pets;
     private final MessageService messages;
     private final PluginConfig config;
+    private final TransferService transfers;
 
     public PetCommand(McPets plugin) {
         this.plugin = plugin;
         this.pets = plugin.getPetService();
         this.messages = plugin.getMessageService();
         this.config = plugin.getPluginConfig();
+        this.transfers = plugin.getTransferService();
     }
 
     @Override
@@ -53,6 +57,7 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             case "tpa" -> tpa(sender, args);
             case "tph" -> tph(sender, args);
             case "gui" -> gui(sender, args);
+            case "transfer" -> transfer(sender, args);
             case "reload" -> reload(sender);
             default -> messages.send(sender, "unknown-command");
         }
@@ -317,6 +322,52 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         plugin.getGuiManager().openMain(player);
     }
 
+    private void transfer(CommandSender sender, String[] args) {
+        if (denyUnlessPlayer(sender)) {
+            return;
+        }
+        Player player = (Player) sender;
+        if (args.length < 2) {
+            messages.sendRaw(player, "<red>用法: /pet transfer <宠物名> <玩家></red>");
+            return;
+        }
+        String sub = args[1].toLowerCase(Locale.ROOT);
+        switch (sub) {
+            case "confirm" -> {
+                if (args.length < 3) {
+                    messages.send(player, "transfer-invalid");
+                    return;
+                }
+                transfers.confirm(player, args[2]);
+            }
+            case "cancel" -> transfers.cancelConfirm(player);
+            case "accept" -> {
+                if (args.length < 3) {
+                    messages.send(player, "transfer-invalid");
+                    return;
+                }
+                transfers.accept(player, args[2]);
+            }
+            case "deny" -> {
+                if (args.length < 3) {
+                    messages.send(player, "transfer-invalid");
+                    return;
+                }
+                transfers.deny(player, args[2]);
+            }
+            default -> {
+                if (denyUnlessPerm(player, "mcpets.transfer")) {
+                    return;
+                }
+                if (args.length < 3) {
+                    messages.sendRaw(player, "<red>用法: /pet transfer <宠物名> <玩家></red>");
+                    return;
+                }
+                transfers.startTransfer(player, args[1], args[2]);
+            }
+        }
+    }
+
     private void reload(CommandSender sender) {
         if (denyUnlessPerm(sender, "mcpets.admin")) {
             return;
@@ -330,18 +381,19 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
                                                @NotNull String alias, String @NotNull [] args) {
         if (args.length == 1) {
             return StringUtil.copyPartialMatches(args[0],
-                    Arrays.asList("tame", "list", "delete", "toggle", "tpa", "tph", "gui", "help", "reload"),
+                    Arrays.asList("tame", "list", "delete", "toggle", "tpa", "tph", "gui", "transfer", "help", "reload"),
                     new ArrayList<>());
         }
         if (!(sender instanceof Player player)) {
             return List.of();
         }
         List<String> names = pets.storage().byOwner(player.getUniqueId()).stream()
-                .map(PetData::getName)
+                .map(d -> Text.plain(d.getName()))
+                .filter(n -> !n.isEmpty())
                 .collect(Collectors.toList());
         if (args.length == 2) {
             return switch (args[0].toLowerCase(Locale.ROOT)) {
-                case "delete", "toggle", "tpa", "tph", "gui" ->
+                case "delete", "toggle", "tpa", "tph", "gui", "transfer" ->
                         StringUtil.copyPartialMatches(args[1], names, new ArrayList<>());
                 case "list" -> {
                     if (player.hasPermission("mcpets.list.others")) {
@@ -356,6 +408,18 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("toggle")) {
             return StringUtil.copyPartialMatches(args[2], List.of("follow", "attack"), new ArrayList<>());
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("transfer")) {
+            String sub = args[1].toLowerCase(Locale.ROOT);
+            if (sub.equals("confirm") || sub.equals("accept") || sub.equals("deny") || sub.equals("cancel")) {
+                return List.of();
+            }
+            return StringUtil.copyPartialMatches(args[2],
+                    Bukkit.getOnlinePlayers().stream()
+                            .map(Player::getName)
+                            .filter(n -> !n.equalsIgnoreCase(player.getName()))
+                            .toList(),
+                    new ArrayList<>());
         }
         return List.of();
     }

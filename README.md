@@ -88,6 +88,7 @@ Morndream 服务器的 **Paper / Folia** 宠物插件：把世界上几乎任意
 | `/pet tpa <名字>` | 传送到宠物 |
 | `/pet tph <名字>` | 宠物传到身边 |
 | `/pet gui [名字]` | 打开管理界面 |
+| `/pet transfer <名字> <玩家>` | 转让宠物（聊天二次确认后对方接受/拒绝） |
 | `/pet reload` | 重载配置（需管理权限） |
 
 ---
@@ -104,6 +105,7 @@ Morndream 服务器的 **Paper / Folia** 宠物插件：把世界上几乎任意
 | `mcpets.toggle` | true | 切换 follow / attack |
 | `mcpets.tpa` / `mcpets.tph` | true | 传送 |
 | `mcpets.gui` | true | 打开 GUI |
+| `mcpets.transfer` | true | 转让宠物 |
 | `mcpets.admin` | op | 管理（含子权限） |
 
 兼容 LuckPerms 等权限插件。

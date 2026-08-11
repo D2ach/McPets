@@ -154,6 +154,25 @@ public final class PetStorage {
         markDirty();
     }
 
+    /** 转让：更新主人 UUID 与按主人的名称索引，实体索引不变。 */
+    public void changeOwner(PetData data, UUID newOwner) {
+        if (data.getOwnerId().equals(newOwner)) {
+            return;
+        }
+        Map<String, UUID> oldNames = ownerNameIndex.get(data.getOwnerId());
+        if (oldNames != null) {
+            oldNames.remove(nameKey(data.getName()));
+            if (oldNames.isEmpty()) {
+                ownerNameIndex.remove(data.getOwnerId());
+            }
+        }
+        data.setOwnerId(newOwner);
+        ownerNameIndex
+                .computeIfAbsent(newOwner, _ -> new ConcurrentHashMap<>())
+                .put(nameKey(data.getName()), data.getPetId());
+        markDirty();
+    }
+
     public void rebindEntity(PetData data, UUID newEntityId) {
         UUID old = data.getEntityId();
         if (old != null) {

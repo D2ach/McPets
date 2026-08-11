@@ -12,6 +12,7 @@ import top.morndream.mcPets.service.MessageService;
 import top.morndream.mcPets.service.MouthService;
 import top.morndream.mcPets.service.ParticleService;
 import top.morndream.mcPets.service.PetService;
+import top.morndream.mcPets.service.TransferService;
 import top.morndream.mcPets.service.VariantService;
 import top.morndream.mcPets.storage.PetStorage;
 import top.morndream.mcPets.util.SchedulerUtil;
@@ -26,6 +27,7 @@ public final class McPets extends JavaPlugin {
     private ParticleService particleService;
     private VariantService variantService;
     private PetService petService;
+    private TransferService transferService;
     private GuiManager guiManager;
     private PetAIManager petAIManager;
 
@@ -51,6 +53,7 @@ public final class McPets extends JavaPlugin {
         floatItemService = new FloatItemService(this);
         particleService = new ParticleService(this);
         petService = new PetService(this, petStorage, messageService, mouthService, floatItemService, appearanceService);
+        transferService = new TransferService(this);
         guiManager = new GuiManager(this);
         guiManager.loadAll();
         petAIManager = new PetAIManager(this);
@@ -144,6 +147,10 @@ public final class McPets extends JavaPlugin {
 
     public PetService getPetService() {
         return petService;
+    }
+
+    public TransferService getTransferService() {
+        return transferService;
     }
 
     public GuiManager getGuiManager() {
