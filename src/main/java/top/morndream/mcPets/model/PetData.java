@@ -27,6 +27,8 @@ public final class PetData {
     private String particlePreset = "none";
     private String mouthItem = "none";
     private String floatItem = "none";
+    /** 运行时选中的群系/外观变种（NamespacedKey 或枚举名）；卸载时不保留在实体上 */
+    private String variant;
     private String worldName;
     private double x;
     private double y;
@@ -42,6 +44,11 @@ public final class PetData {
     private boolean vanillaCustomNameVisible;
     /** 狐狸主手物品材质名；null 表示空或不适用 */
     private String vanillaFoxMainHand;
+    /** 驯服前原版变种；卸载/删除时还原 */
+    private String vanillaVariant;
+    /** 驯服前村民职业（NamespacedKey）；卸载时还原 */
+    private String vanillaProfession;
+    private int vanillaVillagerXp;
 
     /** 运行时：每个目标的命中次数（不落盘） */
     private final Map<UUID, Integer> hitCounts = new HashMap<>();
@@ -169,6 +176,14 @@ public final class PetData {
         this.floatItem = floatItem == null ? "none" : floatItem;
     }
 
+    public String getVariant() {
+        return variant;
+    }
+
+    public void setVariant(String variant) {
+        this.variant = variant;
+    }
+
     public String getWorldName() {
         return worldName;
     }
@@ -250,6 +265,30 @@ public final class PetData {
         this.vanillaFoxMainHand = vanillaFoxMainHand;
     }
 
+    public String getVanillaVariant() {
+        return vanillaVariant;
+    }
+
+    public void setVanillaVariant(String vanillaVariant) {
+        this.vanillaVariant = vanillaVariant;
+    }
+
+    public String getVanillaProfession() {
+        return vanillaProfession;
+    }
+
+    public void setVanillaProfession(String vanillaProfession) {
+        this.vanillaProfession = vanillaProfession;
+    }
+
+    public int getVanillaVillagerXp() {
+        return vanillaVillagerXp;
+    }
+
+    public void setVanillaVillagerXp(int vanillaVillagerXp) {
+        this.vanillaVillagerXp = Math.max(0, vanillaVillagerXp);
+    }
+
     public Map<UUID, Integer> getHitCounts() {
         return hitCounts;
     }
@@ -292,6 +331,7 @@ public final class PetData {
         section.set("particle", particlePreset);
         section.set("mouth", mouthItem);
         section.set("float", floatItem);
+        section.set("variant", variant);
         section.set("world", worldName);
         section.set("x", x);
         section.set("y", y);
@@ -304,6 +344,9 @@ public final class PetData {
         section.set("vanilla.custom-name", vanillaCustomName);
         section.set("vanilla.custom-name-visible", vanillaCustomNameVisible);
         section.set("vanilla.fox-main-hand", vanillaFoxMainHand);
+        section.set("vanilla.variant", vanillaVariant);
+        section.set("vanilla.profession", vanillaProfession);
+        section.set("vanilla.villager-xp", vanillaVillagerXp);
     }
 
     public static PetData read(ConfigurationSection section) {
@@ -338,11 +381,12 @@ public final class PetData {
         data.mouthItem = "none";
         if (section.contains("float")) {
             data.floatItem = section.getString("float", "none");
-        } else if (legacyMouth != null && !"none".equalsIgnoreCase(legacyMouth)) {
+        } else if (!"none".equalsIgnoreCase(legacyMouth)) {
             data.floatItem = legacyMouth;
         } else {
             data.floatItem = "none";
         }
+        data.variant = section.getString("variant");
         data.worldName = section.getString("world");
         data.x = section.getDouble("x");
         data.y = section.getDouble("y");
@@ -355,6 +399,9 @@ public final class PetData {
         data.vanillaCustomName = section.getString("vanilla.custom-name");
         data.vanillaCustomNameVisible = section.getBoolean("vanilla.custom-name-visible", false);
         data.vanillaFoxMainHand = section.getString("vanilla.fox-main-hand");
+        data.vanillaVariant = section.getString("vanilla.variant");
+        data.vanillaProfession = section.getString("vanilla.profession");
+        data.vanillaVillagerXp = Math.max(0, section.getInt("vanilla.villager-xp", 0));
         return data;
     }
 }

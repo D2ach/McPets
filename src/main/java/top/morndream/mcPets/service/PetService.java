@@ -8,6 +8,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import top.morndream.mcPets.McPets;
 import top.morndream.mcPets.config.PluginConfig;
 import top.morndream.mcPets.config.UnloadMode;
@@ -55,6 +56,16 @@ public final class PetService {
         return name != null && NAME_PATTERN.matcher(name).matches();
     }
 
+    /** 村民是否已有工作职业（不含 none / nitwit）。 */
+    public boolean hasWorkingVillagerProfession(LivingEntity entity) {
+        if (!(entity instanceof Villager villager)) {
+            return false;
+        }
+        Villager.Profession profession = villager.getProfession();
+        return !Villager.Profession.NONE.equals(profession)
+                && !Villager.Profession.NITWIT.equals(profession);
+    }
+
     public PetData tame(Player owner, LivingEntity target, String internalName) {
         UUID petId = UUID.randomUUID();
         PetData data = new PetData(petId);
@@ -78,6 +89,8 @@ public final class PetService {
 
         // 快照原版状态 → 只写 pets.yml；运行时套用外观，不改 Tameable / Invulnerable / PDC
         appearanceService.captureVanilla(target, data);
+        // 选中变种初始=驯服时外观；换皮只改 variant，vanilla.variant 供卸载还原
+        data.setVariant(data.getVanillaVariant());
         LegacyPdcCleaner.strip(plugin, target);
         if (target instanceof Mob mob) {
             mob.setTarget(null);
@@ -362,6 +375,45 @@ public final class PetService {
         }
     }
 
+    /**
+     * 更换群系/外观变种（同 EntityType）。不改 {@code vanilla.variant}，卸载时仍还原驯服前变种。
+     *
+     * @return false 若不支持或实体缺失
+     */
+    public boolean setVariant(PetData data, String variantId) {
+        VariantService variants = plugin.getVariantService();
+        if (variantId == null || variantId.isBlank() || !variants.supports(data.getEntityType())) {
+            return false;
+        }
+        LivingEntity entity = findEntity(data);
+        if (entity == null) {
+            return false;
+        }
+        // vanilla 快照永不被换皮覆盖；套用后回读规范 id（如马 COLOR|STYLE）
+        storage.markDirty();
+        if (SchedulerUtil.owns(entity)) {
+            if (!variants.apply(entity, variantId)) {
+                return false;
+            }
+            String canonical = variants.read(entity);
+            data.setVariant(canonical != null ? canonical : variantId);
+            return true;
+        }
+        data.setVariant(variantId);
+        SchedulerUtil.run(entity, plugin, () -> {
+            if (!entity.isValid()) {
+                return;
+            }
+            if (variants.apply(entity, variantId)) {
+                String canonical = variants.read(entity);
+                if (canonical != null) {
+                    data.setVariant(canonical);
+                }
+            }
+        });
+        return true;
+    }
+
     public boolean isValidDisplayName(String raw) {
         if (raw == null || raw.isBlank()) {
             return true;
@@ -432,7 +484,9 @@ public final class PetService {
             if (entity != null) {
                 pendingMissingChecks.remove(data.getPetId());
                 SchedulerUtil.run(entity, plugin, () -> {
-                    appearanceService.applyRuntime(entity, data);
+                    if (appearanceService.applyRuntime(entity, data)) {
+                        storage.markDirty();
+                    }
                     disableMouth(data);
                     floatItemService.apply(entity, data);
                     if (plugin.getPetAIManager() != null) {
@@ -519,7 +573,9 @@ public final class PetService {
         pendingMissingChecks.remove(data.getPetId());
         unloadWaitCounts.remove(data.getPetId());
         SchedulerUtil.run(entity, plugin, () -> {
-            appearanceService.applyRuntime(entity, data);
+            if (appearanceService.applyRuntime(entity, data)) {
+                storage.markDirty();
+            }
             disableMouth(data);
             floatItemService.apply(entity, data);
             if (plugin.getPetAIManager() != null) {
@@ -576,7 +632,9 @@ public final class PetService {
     private void restoreEntity(LivingEntity entity, PetData data) {
         Runnable work = () -> {
             LegacyPdcCleaner.strip(plugin, entity);
-            appearanceService.applyRuntime(entity, data);
+            if (appearanceService.applyRuntime(entity, data)) {
+                storage.markDirty();
+            }
             disableMouth(data);
             floatItemService.apply(entity, data);
             if (entity instanceof Mob mob) {
@@ -626,7 +684,7 @@ public final class PetService {
 
     private void parkEntity(LivingEntity entity, PetData data) {
         LegacyPdcCleaner.strip(plugin, entity);
-        // 完整还原驯服前快照，避免自定义名/体型/幼体/狐狸手物/NoAI 等写入区块存档
+        // 完整还原驯服前快照，避免自定义名/体型/幼体/变种/狐狸手物/NoAI 等写入区块存档
         appearanceService.revertVanilla(entity, data);
         if (entity instanceof Mob mob) {
             try {
@@ -655,8 +713,30 @@ public final class PetService {
                 return false;
             }
             storage.rebindEntity(data, living.getUniqueId());
-            // 新实体的「原版」状态即刚生成时的状态，供日后 park/delete 还原
+            // 保留驯服时的原版快照（含群系变种），避免 despawn 重生后丢失卸载还原目标
+            String vanillaVariant = data.getVanillaVariant();
+            double vanillaScale = data.getVanillaScale();
+            boolean vanillaBaby = data.isVanillaBaby();
+            boolean vanillaNameVisible = data.isVanillaCustomNameVisible();
+            String vanillaName = data.getVanillaCustomName();
+            boolean vanillaRemove = data.isVanillaRemoveWhenFarAway();
+            String vanillaFoxHand = data.getVanillaFoxMainHand();
+            String vanillaProfession = data.getVanillaProfession();
+            int vanillaVillagerXp = data.getVanillaVillagerXp();
             appearanceService.captureVanilla(living, data);
+            if (vanillaVariant != null) {
+                data.setVanillaVariant(vanillaVariant);
+            }
+            data.setVanillaScale(vanillaScale);
+            data.setVanillaBaby(vanillaBaby);
+            data.setVanillaCustomNameVisible(vanillaNameVisible);
+            data.setVanillaCustomName(vanillaName);
+            data.setVanillaRemoveWhenFarAway(vanillaRemove);
+            data.setVanillaFoxMainHand(vanillaFoxHand);
+            if (vanillaProfession != null) {
+                data.setVanillaProfession(vanillaProfession);
+                data.setVanillaVillagerXp(vanillaVillagerXp);
+            }
             restoreEntity(living, data);
             storage.flush();
             return true;

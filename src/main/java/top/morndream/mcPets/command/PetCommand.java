@@ -117,6 +117,10 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
             messages.send(player, "tame-already-pet");
             return;
         }
+        if (config.isBlockVillagerProfession() && pets.hasWorkingVillagerProfession(living)) {
+            messages.send(player, "tame-villager-employed");
+            return;
+        }
         PetData data = pets.tame(player, living, name);
         messages.send(player, "tame-success", Map.of(
                 "name", data.getInternalName(),

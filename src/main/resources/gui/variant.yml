@@ -1,0 +1,65 @@
+# 群系选择独立页：点击图标更换当前宠物的群系/外观变种
+title: "<gradient:#56AB2F:#A8E063><bold>选择群系 · {name}</bold></gradient>"
+size: 54
+
+filler:
+  material: GREEN_STAINED_GLASS_PANE
+  name: " "
+
+# 群系选项填充顺序（由插件按实体类型动态写入）
+# 最多约 28 格：覆盖猫(11)、马毛色+花纹(12)、狼(9) 等
+variant-slots:
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 28
+  - 29
+  - 30
+  - 31
+  - 32
+  - 33
+  - 34
+  - 37
+  - 38
+  - 39
+  - 40
+  - 41
+  - 42
+  - 43
+
+items:
+  info:
+    slot: 4
+    material: OAK_SAPLING
+    name: "<green><bold>群系选择</bold></green>"
+    lore:
+      - "<gray>为 <white>{display}</white> 选择不同群系外观</gray>"
+      - "<gray>当前: <aqua>{variant}</aqua></gray>"
+      - "<dark_gray>类型: {type}</dark_gray>"
+      - ""
+      - "<yellow>点击下方图标即可切换</yellow>"
+      - "<dark_gray>卸载/删除时会还原驯服前原版变种</dark_gray>"
+    action: none
+
+  back:
+    slot: 45
+    material: ARROW
+    name: "<yellow>返回管理</yellow>"
+    action: back
+
+  close:
+    slot: 49
+    material: BARRIER
+    name: "<red><bold>关闭</bold></red>"
+    action: close

@@ -3,6 +3,7 @@ package top.morndream.mcPets.listener;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -10,6 +11,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.VillagerCareerChangeEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -108,6 +110,27 @@ public final class PetListener implements Listener {
     }
 
     /**
+     * 配置 block-villager-profession 时，阻止宠物村民获取/更换工作职业。
+     * 允许变为 none（失业）或保持 nitwit。
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onVillagerCareerChange(VillagerCareerChangeEvent event) {
+        if (!plugin.getPluginConfig().isBlockVillagerProfession()) {
+            return;
+        }
+        PetData data = pets.storage().byEntityId(event.getEntity().getUniqueId());
+        if (data == null) {
+            return;
+        }
+        Villager.Profession next = event.getProfession();
+        // 允许失业 / nitwit；其余职业变更一律拦截
+        if (Villager.Profession.NONE.equals(next) || Villager.Profession.NITWIT.equals(next)) {
+            return;
+        }
+        event.setCancelled(true);
+    }
+
+    /**
      * 宠物击杀玩家：击杀者显示为「名字(生物id)」，落在翻译句式中间。
      * 例：xxx被 Fluffy(pig) 杀死了（而非句末再加括号）
      */
@@ -123,9 +146,14 @@ public final class PetListener implements Listener {
             return;
         }
         String typeId = damager.getType().getKey().getKey();
-        Component customName = damager.customName();
-        Component petName = customName != null ? customName : Text.parse(data.effectiveDisplayRaw());
-        Component killerLabel = petName.append(Component.text("(" + typeId + ")", NamedTextColor.GRAY));
+        Component petName = damager.customName();
+        if (petName == null) {
+            petName = Text.parse(data.effectiveDisplayRaw());
+        }
+        // 用 empty() 作根，避免对可能为 null 的 Component 直接 append
+        Component killerLabel = Component.empty()
+                .append(petName)
+                .append(Component.text("(" + typeId + ")", NamedTextColor.GRAY));
 
         // death.attack.mob = "%1$s was slain by %2$s" / "%1$s被%2$s杀死了"
         Component message = Component.translatable(

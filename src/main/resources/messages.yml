@@ -9,6 +9,7 @@ tame-success: "<green>已驯服</green> <white>{name}</white> <gray>({type})</gr
 tame-no-target: "<red>准星前方没有可驯服的生物。</red>"
 tame-blacklisted: "<red>该生物类型在黑名单中，无法驯服。</red>"
 tame-already-pet: "<red>这只生物已经是宠物了。</red>"
+tame-villager-employed: "<red>有职业的村民无法驯服。请先让其失业（毁掉工作站）后再试。</red>"
 tame-name-taken: "<red>你已有一只叫</red> <white>{name}</white> <red>的宠物。</red>"
 tame-name-invalid: "<red>名字无效。请使用 1-16 位字母/数字/下划线/中文。</red>"
 tame-limit: "<red>宠物数量已达上限</red> <white>{max}</white> <red>（当前</red> <white>{count}</white><red>）。</red>"
@@ -41,6 +42,9 @@ baby-changed: "<green>{name}</green> <gray>幼体 →</gray> <aqua>{baby}</aqua>
 particle-changed: "<green>{name}</green> <gray>粒子 →</gray> <aqua>{preset}</aqua>"
 mouth-changed: "<green>{name}</green> <gray>叼物 →</gray> <aqua>{item}</aqua>"
 float-changed: "<green>{name}</green> <gray>悬浮物 →</gray> <aqua>{item}</aqua>"
+variant-changed: "<green>{name}</green> <gray>变种 →</gray> <aqua>{variant}</aqua>"
+variant-unsupported: "<yellow>{name}</yellow> <gray>该生物没有可更换的群系变种。</gray>"
+variant-failed: "<red>无法应用该变种。</red>"
 attack-exit-invincible: "<yellow>{name}</yellow> <gray>进入无敌，已退出攻击。</gray>"
 attack-blocked-invincible: "<yellow>{name}</yellow> <gray>处于无敌模式，无法攻击。</gray>"
 help:

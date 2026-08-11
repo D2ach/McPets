@@ -35,7 +35,7 @@ Morndream 服务器的 **Paper / Folia** 宠物插件：把世界上几乎任意
 
 ### 管理 GUI
 - **Shift + 右键** 宠物，或 `/pet gui [名字]`
-- 切换状态、攻击、模式、AI、体型档位、幼体、粒子、悬浮物、传送
+- 切换状态、攻击、模式、AI、体型档位、幼体、粒子、悬浮物、群系变种、传送
 - 界面物品不可被拿走；插件关闭时会先关闭所有 GUI
 - 每个页面独立配置：`plugins/McPets/gui/*.yml`
 
@@ -43,6 +43,21 @@ Morndream 服务器的 **Paper / Folia** 宠物插件：把世界上几乎任意
 - **体型**：Attribute 缩放三档（默认 0.5 / 1.0 / 2.0）+ 原版 baby（支持的生物）
 - **粒子**：内置预设；检测到 PlayerParticles 时走兼容通道
 - **悬浮物**：头顶上方装饰 ItemDisplay（可轻微浮动）
+- **群系变种**：同种换外观（见下表），不换物种、不重生；卸载时还原驯服前原版变种
+  | 生物 | 数量 | 说明 |
+  |------|------|------|
+  | 狼 | 9 | 群系皮 |
+  | 猫 | 11 | 品种 |
+  | 村民 / 僵尸村民 | 7 | 群系服装 |
+  | 兔 | 7 | 毛色 |
+  | 马 | 7+5 | 毛色 + 花纹 |
+  | 牛 / 猪 / 鸡 / 蛙 | 各 3 | cold / temperate / warm |
+  | 僵尸鹦鹉螺 | **2** | 仅 temperate / warm（无 cold） |
+  | 美西螈 / 鹦鹉 | 各 5 | 颜色 |
+  | 羊驼 / 行商羊驼 | 4 | 毛色 |
+  | 鲑鱼 | 3 | 体型 |
+  | 熊猫 | 7 | 基因外观 |
+  | 狐 / 蘑菇牛 | 各 2 | 群系/颜色 |
 - **叼物**：暂时关闭（后续重做）
 
 ### 持久化与存档安全
@@ -124,6 +139,7 @@ settings:
   tame-range: 8
   follow-teleport-distance: 16.0
   notify-missing-pet: false
+  block-villager-profession: true  # true=有职业村民不可驯服，宠物也不能再就业
 
 blacklist:
   - ENDER_DRAGON
@@ -146,6 +162,7 @@ GUI 布局与按钮：`plugins/McPets/gui/`
 - `main.yml` — 宠物列表
 - `manage.yml` — 单宠管理
 - `float.yml` — 悬浮物选择
+- `variant.yml` — 群系变种选择
 
 文案在 `messages.yml`，支持 MiniMessage 渐变、`&` 颜色码与 `#RRGGBB`。
 

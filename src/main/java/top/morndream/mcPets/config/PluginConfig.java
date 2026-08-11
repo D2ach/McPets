@@ -35,6 +35,7 @@ public final class PluginConfig {
     private UnloadMode unloadMode = UnloadMode.PARK;
     private int maxDisplayNameLength;
     private boolean defaultInvincible;
+    private boolean blockVillagerProfession;
 
     private Set<EntityType> blacklist = Set.of();
 
@@ -86,6 +87,7 @@ public final class PluginConfig {
         unloadMode = UnloadMode.fromConfig(config.getString("settings.unload-mode", "park"));
         maxDisplayNameLength = Math.max(1, config.getInt("settings.max-display-name-length", 24));
         defaultInvincible = config.getBoolean("settings.default-invincible", true);
+        blockVillagerProfession = config.getBoolean("settings.block-villager-profession", true);
 
         Set<EntityType> types = new HashSet<>();
         for (String raw : config.getStringList("blacklist")) {
@@ -225,6 +227,11 @@ public final class PluginConfig {
 
     public boolean isDefaultInvincible() {
         return defaultInvincible;
+    }
+
+    /** true = 不允许宠物村民获取工作 */
+    public boolean isBlockVillagerProfession() {
+        return blockVillagerProfession;
     }
 
     public double getAttackDamage() {

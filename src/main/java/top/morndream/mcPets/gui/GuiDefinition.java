@@ -25,6 +25,7 @@ public final class GuiDefinition {
     private final ItemStack filler;
     private final Map<Integer, GuiButton> buttons = new HashMap<>();
     private final List<Integer> petSlots = new ArrayList<>();
+    private final List<Integer> variantSlots = new ArrayList<>();
     private final GuiButton petIconTemplate;
 
     public GuiDefinition(String id, FileConfiguration yaml) {
@@ -32,6 +33,7 @@ public final class GuiDefinition {
         this.size = Math.clamp(yaml.getInt("size", 27), 9, 54);
         this.filler = readItem(yaml.getConfigurationSection("filler"));
         this.petSlots.addAll(yaml.getIntegerList("pet-slots"));
+        this.variantSlots.addAll(yaml.getIntegerList("variant-slots"));
         this.petIconTemplate = readButton(-1, yaml.getConfigurationSection("pet-icon"));
 
         ConfigurationSection items = yaml.getConfigurationSection("items");
@@ -153,6 +155,10 @@ public final class GuiDefinition {
 
     public List<Integer> petSlots() {
         return petSlots;
+    }
+
+    public List<Integer> variantSlots() {
+        return variantSlots;
     }
 
     public static GuiDefinition load(McPets plugin, String name) {

@@ -12,6 +12,7 @@ import top.morndream.mcPets.service.MessageService;
 import top.morndream.mcPets.service.MouthService;
 import top.morndream.mcPets.service.ParticleService;
 import top.morndream.mcPets.service.PetService;
+import top.morndream.mcPets.service.VariantService;
 import top.morndream.mcPets.storage.PetStorage;
 import top.morndream.mcPets.util.SchedulerUtil;
 
@@ -23,6 +24,7 @@ public final class McPets extends JavaPlugin {
     private MouthService mouthService;
     private FloatItemService floatItemService;
     private ParticleService particleService;
+    private VariantService variantService;
     private PetService petService;
     private GuiManager guiManager;
     private PetAIManager petAIManager;
@@ -34,6 +36,7 @@ public final class McPets extends JavaPlugin {
         saveResource("gui/main.yml", false);
         saveResource("gui/manage.yml", false);
         saveResource("gui/float.yml", false);
+        saveResource("gui/variant.yml", false);
 
         pluginConfig = new PluginConfig(this);
         pluginConfig.reload();
@@ -42,7 +45,8 @@ public final class McPets extends JavaPlugin {
         petStorage.load();
 
         messageService = new MessageService(this);
-        AppearanceService appearanceService = new AppearanceService(this);
+        variantService = new VariantService();
+        AppearanceService appearanceService = new AppearanceService(this, variantService);
         mouthService = new MouthService(this);
         floatItemService = new FloatItemService(this);
         particleService = new ParticleService(this);
@@ -124,6 +128,10 @@ public final class McPets extends JavaPlugin {
 
     public ParticleService getParticleService() {
         return particleService;
+    }
+
+    public VariantService getVariantService() {
+        return variantService;
     }
 
     public PetService getPetService() {

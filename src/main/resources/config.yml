@@ -28,6 +28,8 @@ settings:
   max-display-name-length: 24
   # 驯服后默认进入无敌（站桩、不寻路；切回普通后才会走动）
   default-invincible: true
+  # 为 true 时：有职业的村民不能驯服；宠物村民也不能再获取工作
+  block-villager-profession: true
   # 插件被 disable / 热重载时对已存在宠物的处理：
   # park    = 实体留在世界，关闭无敌/攻击/叼物/AI，保留原版名字，重载后按 pets.yml 实体UUID恢复
   # despawn = 移除实体并写档，插件再次启用时按存档坐标重新生成（装备等 NBT 不保留）

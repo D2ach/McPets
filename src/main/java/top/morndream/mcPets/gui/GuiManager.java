@@ -7,17 +7,22 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import top.morndream.mcPets.McPets;
 import top.morndream.mcPets.model.PetData;
 import top.morndream.mcPets.model.PetState;
 import top.morndream.mcPets.service.MessageService;
 import top.morndream.mcPets.service.PetService;
+import top.morndream.mcPets.service.VariantService;
 import top.morndream.mcPets.util.Text;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +44,7 @@ public final class GuiManager implements Listener {
 
     public void loadAll() {
         definitions.clear();
-        for (String id : List.of("main", "manage", "float")) {
+        for (String id : List.of("main", "manage", "float", "variant")) {
             definitions.put(id, GuiDefinition.load(plugin, id));
         }
     }
@@ -97,6 +102,108 @@ public final class GuiManager implements Listener {
         openViewers.add(player.getUniqueId());
     }
 
+    public void openVariant(Player player, PetData data) {
+        if (denyManage(player, data)) {
+            messages.send(player, "no-permission");
+            return;
+        }
+        VariantService variants = plugin.getVariantService();
+        List<VariantService.Option> options = variants.list(data.getEntityType());
+        if (options.isEmpty()) {
+            messages.send(player, "variant-unsupported", Map.of("name", data.getInternalName()));
+            return;
+        }
+        GuiDefinition def = definitions.get("variant");
+        if (def == null) {
+            messages.sendRaw(player, "<red>群系选择界面未加载，请检查 gui/variant.yml</red>");
+            return;
+        }
+        Holder holder = new Holder("variant", data.getPetId());
+        Map<String, String> ph = placeholders(data);
+        Inventory inv = def.create(holder, ph);
+        List<Integer> slots = def.variantSlots();
+        if (slots.isEmpty()) {
+            messages.sendRaw(player, "<red>gui/variant.yml 缺少 variant-slots 配置。</red>");
+            return;
+        }
+        if (options.size() > slots.size()) {
+            plugin.getLogger().warning("变种选项 " + options.size() + " 超过 GUI 槽位 "
+                    + slots.size() + "，类型 " + data.getEntityType() + " 将截断显示。");
+        }
+        String current = data.getVariant();
+        for (int i = 0; i < options.size() && i < slots.size(); i++) {
+            VariantService.Option opt = options.get(i);
+            int slot = slots.get(i);
+            inv.setItem(slot, renderVariantIcon(opt, isVariantSelected(current, opt.id())));
+            holder.slotVariants.put(slot, opt.id());
+        }
+        player.openInventory(inv);
+        openViewers.add(player.getUniqueId());
+    }
+
+    private ItemStack renderVariantIcon(VariantService.Option opt, boolean selected) {
+        ItemStack stack = new ItemStack(opt.icon());
+        ItemMeta meta = stack.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Text.parse((selected ? "<green><bold>" : "<white><bold>")
+                    + opt.display() + (selected ? " ✓" : "")
+                    + "</bold>" + (selected ? "</green>" : "</white>")));
+            List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
+            lore.add(Text.parse("<aqua>群系: </aqua><white>" + opt.biomeGroup() + "</white>"));
+            lore.add(Text.parse("<dark_gray>" + opt.id() + "</dark_gray>"));
+            lore.add(Text.parse(selected
+                    ? "<green>当前选用的群系外观</green>"
+                    : "<yellow>点击切换到此群系</yellow>"));
+            meta.lore(lore);
+            stack.setItemMeta(meta);
+        }
+        return stack;
+    }
+
+    /** 比较 minecraft:snowy 与 snowy；马匹支持 color:/style: 与 COLOR|STYLE */
+    private static boolean isVariantSelected(String current, String optionId) {
+        if (current == null || optionId == null) {
+            return false;
+        }
+        if (Objects.equals(normalizeVariantId(current), normalizeVariantId(optionId))) {
+            return true;
+        }
+        String cur = current.trim();
+        String opt = optionId.trim();
+        if (opt.startsWith("color:") && cur.contains("|")) {
+            return normalizeVariantId(cur.split("\\|", 2)[0])
+                    .equals(normalizeVariantId(opt.substring("color:".length())));
+        }
+        if (opt.startsWith("style:") && cur.contains("|")) {
+            String[] parts = cur.split("\\|", 2);
+            return parts.length == 2 && normalizeVariantId(parts[1])
+                    .equals(normalizeVariantId(opt.substring("style:".length())));
+        }
+        if (!opt.contains("|") && cur.contains("|")) {
+            // 熊猫等：选项为单一基因，存档为 MAIN|HIDDEN
+            String main = cur.split("\\|", 2)[0];
+            return normalizeVariantId(main).equals(normalizeVariantId(opt));
+        }
+        return false;
+    }
+
+    /** 比较 minecraft:snowy 与 snowy */
+    private static String normalizeVariantId(String id) {
+        if (id == null) {
+            return "";
+        }
+        String raw = id.trim();
+        if (raw.startsWith("color:") || raw.startsWith("style:")) {
+            raw = raw.substring(raw.indexOf(':') + 1);
+        } else {
+            int colon = raw.indexOf(':');
+            if (colon >= 0) {
+                raw = raw.substring(colon + 1);
+            }
+        }
+        return raw.toLowerCase(java.util.Locale.ROOT).replace('-', '_');
+    }
+
     /** 非主人且无 mcpets.admin 时拒绝管理。 */
     private boolean denyManage(Player player, PetData data) {
         return data == null || (!data.getOwnerId().equals(player.getUniqueId())
@@ -134,6 +241,16 @@ public final class GuiManager implements Listener {
         openFloat(player, data);
     }
 
+    public void refreshVariant(Player player, PetData data) {
+        if (player.getOpenInventory().getTopInventory().getHolder() instanceof Holder holder
+                && "variant".equals(holder.guiId())
+                && data.getPetId().equals(holder.petId())) {
+            openVariant(player, data);
+            return;
+        }
+        openVariant(player, data);
+    }
+
     private Map<String, String> placeholders(PetData data) {
         Map<String, String> map = new HashMap<>();
         map.put("name", data.getInternalName());
@@ -157,7 +274,25 @@ public final class GuiManager implements Listener {
         map.put("baby", data.isBaby() ? "是" : "否");
         map.put("particle", data.getParticlePreset());
         map.put("float", data.getFloatItem());
+        map.put("variant", variantDisplayLabel(data));
         return map;
+    }
+
+    private String variantDisplayLabel(PetData data) {
+        String id = data.getVariant();
+        if (id == null || id.isBlank()) {
+            return "默认";
+        }
+        List<String> labels = new ArrayList<>();
+        for (VariantService.Option opt : plugin.getVariantService().list(data.getEntityType())) {
+            if (isVariantSelected(id, opt.id())) {
+                labels.add(opt.display());
+            }
+        }
+        if (!labels.isEmpty()) {
+            return String.join(" · ", labels);
+        }
+        return id;
     }
 
     @EventHandler
@@ -189,6 +324,43 @@ public final class GuiManager implements Listener {
             }
         }
 
+        if ("variant".equals(holder.guiId())) {
+            String variantId = holder.slotVariants.get(slot);
+            if (variantId != null) {
+                PetData data = holder.petId() == null ? null : pets.storage().byPetId(holder.petId());
+                if (data == null) {
+                    return;
+                }
+                if (denyManage(player, data)) {
+                    messages.send(player, "no-permission");
+                    player.closeInventory();
+                    return;
+                }
+                if (!pets.setVariant(data, variantId)) {
+                    messages.send(player, "variant-failed");
+                    return;
+                }
+                String label = variantDisplayLabel(data);
+                if ("默认".equals(label)) {
+                    for (VariantService.Option opt : plugin.getVariantService().list(data.getEntityType())) {
+                        if (opt.id().equals(variantId)) {
+                            label = opt.display();
+                            break;
+                        }
+                    }
+                    if ("默认".equals(label)) {
+                        label = variantId;
+                    }
+                }
+                messages.send(player, "variant-changed", Map.of(
+                        "name", data.getInternalName(),
+                        "variant", label
+                ));
+                refreshVariant(player, data);
+                return;
+            }
+        }
+
         GuiDefinition.GuiButton button = def.buttons().get(slot);
         if (button == null) {
             return;
@@ -213,7 +385,7 @@ public final class GuiManager implements Listener {
         }
         PetData data = holder.petId() == null ? null : pets.storage().byPetId(holder.petId());
         if (action.equals("back")) {
-            if ("float".equals(holder.guiId()) && data != null) {
+            if (("float".equals(holder.guiId()) || "variant".equals(holder.guiId())) && data != null) {
                 openManage(player, data);
             } else {
                 openMain(player);
@@ -319,6 +491,7 @@ public final class GuiManager implements Listener {
                 refreshManage(player, data);
             }
             case "open_float" -> openFloat(player, data);
+            case "open_variant" -> openVariant(player, data);
             case "tpa" -> {
                 if (pets.teleportPlayerToPet(player, data)) {
                     messages.send(player, "tpa-success", Map.of("name", data.getInternalName()));
@@ -401,6 +574,7 @@ public final class GuiManager implements Listener {
         private final String guiId;
         private final UUID petId;
         private final Map<Integer, UUID> slotPets = new HashMap<>();
+        private final Map<Integer, String> slotVariants = new HashMap<>();
         private Inventory inventory;
 
         public Holder(String guiId, UUID petId) {
