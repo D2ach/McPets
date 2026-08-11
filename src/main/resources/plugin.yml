@@ -16,8 +16,16 @@ commands:
 
 permissions:
   mcpets.use:
-    description: 使用 /pet 基础指令
+    description: 使用 /pet 基础指令（含常用子权限）
     default: true
+    children:
+      mcpets.list: true
+      mcpets.delete: true
+      mcpets.toggle: true
+      mcpets.tpa: true
+      mcpets.tph: true
+      mcpets.gui: true
+      mcpets.transfer: true
   mcpets.tame:
     description: 驯服生物为宠物
     default: op

@@ -13,7 +13,7 @@ import java.util.UUID;
 public final class PetData {
 
     private final UUID petId;
-    private UUID ownerId;
+    private volatile UUID ownerId;
     private UUID entityId;
     /** 唯一名称（可含颜色）；指令查找按可见纯文本 */
     private String name;

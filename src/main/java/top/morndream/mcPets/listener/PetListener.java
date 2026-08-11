@@ -93,7 +93,8 @@ public final class PetListener implements Listener {
         if (!data.getOwnerId().equals(player.getUniqueId()) && !player.hasPermission("mcpets.admin")) {
             return;
         }
-        if (!player.hasPermission("mcpets.gui")) {
+        if (!player.hasPermission("mcpets.gui") && !player.hasPermission("mcpets.admin")) {
+            plugin.getMessageService().send(player, "no-permission");
             return;
         }
         double range = plugin.getPluginConfig().getInteractRange();

@@ -97,7 +97,7 @@ Morndream 服务器的 **Paper / Folia** 宠物插件：把世界上几乎任意
 
 | 权限 | 默认 | 说明 |
 |------|------|------|
-| `mcpets.use` | true | 基础指令 |
+| `mcpets.use` | true | 基础指令（含子权限：list/delete/toggle/tpa/tph/gui/transfer） |
 | `mcpets.tame` | op | 驯服 |
 | `mcpets.list` | true | 查看自己的列表 |
 | `mcpets.list.others` | op | 查看他人列表 |

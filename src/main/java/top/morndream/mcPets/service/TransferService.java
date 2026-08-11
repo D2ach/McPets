@@ -279,6 +279,10 @@ public final class TransferService {
         if (data.getState() == PetState.ATTACK) {
             data.setState(PetState.FOLLOW);
         }
+        UUID petId = data.getPetId();
+        if (plugin.getGuiManager() != null) {
+            plugin.getGuiManager().closeViewersOf(petId);
+        }
         storage.changeOwner(data, newOwner.getUniqueId());
         storage.flush();
         if (plugin.getPetAIManager() != null) {

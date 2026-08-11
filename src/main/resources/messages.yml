@@ -3,6 +3,7 @@
 
 prefix: "<gradient:#7EE8FA:#80FF72><bold>McPets</bold></gradient> <dark_gray>»</dark_gray> "
 no-permission: "<red>你没有权限这样做。</red>"
+not-owner: "<red>这不是你的宠物。</red>"
 player-only: "<red>该指令仅限玩家使用。</red>"
 unknown-command: "<gray>未知子指令。输入 <aqua>/pet help</aqua> 查看帮助。</gray>"
 tame-success: "<green>已驯服</green> <white>{name}</white> <gray>({type})</gray><green>！</green>"

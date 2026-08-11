@@ -74,6 +74,10 @@ public final class GuiManager implements Listener {
 
     public void openManage(Player player, PetData data) {
         if (denyManage(player, data)) {
+            messages.send(player, "not-owner");
+            return;
+        }
+        if (!player.hasPermission("mcpets.gui") && !player.hasPermission("mcpets.admin")) {
             messages.send(player, "no-permission");
             return;
         }
@@ -89,7 +93,7 @@ public final class GuiManager implements Listener {
 
     public void openFloat(Player player, PetData data) {
         if (denyManage(player, data)) {
-            messages.send(player, "no-permission");
+            messages.send(player, "not-owner");
             return;
         }
         GuiDefinition def = definitions.get("float");
@@ -104,7 +108,7 @@ public final class GuiManager implements Listener {
 
     public void openVariant(Player player, PetData data) {
         if (denyManage(player, data)) {
-            messages.send(player, "no-permission");
+            messages.send(player, "not-owner");
             return;
         }
         VariantService variants = plugin.getVariantService();
@@ -332,7 +336,7 @@ public final class GuiManager implements Listener {
                     return;
                 }
                 if (denyManage(player, data)) {
-                    messages.send(player, "no-permission");
+                    messages.send(player, "not-owner");
                     player.closeInventory();
                     return;
                 }
@@ -396,7 +400,7 @@ public final class GuiManager implements Listener {
             return;
         }
         if (denyManage(player, data)) {
-            messages.send(player, "no-permission");
+            messages.send(player, "not-owner");
             player.closeInventory();
             return;
         }
@@ -555,6 +559,27 @@ public final class GuiManager implements Listener {
         }
         messages.send(player, "rename-success", Map.of("name", message));
         top.morndream.mcPets.util.SchedulerUtil.run(player, plugin, () -> openManage(player, data));
+    }
+
+    /** 关闭正在管理指定宠物的玩家界面（转让后踢掉原主人 GUI）。 */
+    public void closeViewersOf(UUID petId) {
+        for (UUID id : Set.copyOf(openViewers)) {
+            Player player = Bukkit.getPlayer(id);
+            if (player == null) {
+                openViewers.remove(id);
+                continue;
+            }
+            if (!(player.getOpenInventory().getTopInventory().getHolder() instanceof Holder holder)) {
+                continue;
+            }
+            if (petId.equals(holder.petId())) {
+                try {
+                    player.closeInventory();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        renameSessions.entrySet().removeIf(e -> petId.equals(e.getValue()));
     }
 
     public void closeAll() {
