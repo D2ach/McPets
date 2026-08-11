@@ -88,12 +88,16 @@ public final class PetCommand implements CommandExecutor, TabCompleter {
         }
         Player player = (Player) sender;
         if (args.length < 2) {
-            messages.sendRaw(player, "<red>用法: /pet tame <名字></red>");
+            messages.sendRaw(player, "<red>用法: /pet tame <名字></red> <gray>(支持颜色/MiniMessage)</gray>");
             return;
         }
-        String name = args[1];
-        if (!pets.isValidInternalName(name)) {
-            messages.send(player, "tame-name-invalid");
+        // 拼接后续参数，便于 <gradient:...>名字</gradient> 等带空格写法
+        String name = String.join(" ", Arrays.copyOfRange(args, 1, args.length)).trim();
+        if (!pets.isValidDisplayName(name)) {
+            messages.send(player, "tame-name-invalid", Map.of(
+                    "max", String.valueOf(config.getMaxDisplayNameLength()),
+                    "length", String.valueOf(Text.plainLength(name))
+            ));
             return;
         }
         if (pets.storage().hasName(player.getUniqueId(), name)) {

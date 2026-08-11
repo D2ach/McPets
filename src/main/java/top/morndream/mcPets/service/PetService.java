@@ -24,11 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 public final class PetService {
-
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\w\\u4e00-\\u9fa5-]{1,16}$");
 
     private final McPets plugin;
     private final PetStorage storage;
@@ -50,10 +47,6 @@ public final class PetService {
         this.mouthService = mouthService;
         this.floatItemService = floatItemService;
         this.appearanceService = appearanceService;
-    }
-
-    public boolean isValidInternalName(String name) {
-        return name != null && NAME_PATTERN.matcher(name).matches();
     }
 
     /** 村民是否已有工作职业（不含 none / nitwit）。 */
@@ -417,8 +410,8 @@ public final class PetService {
         if (raw == null || raw.isBlank()) {
             return false;
         }
-        return Text.plainLength(raw) <= config.getMaxDisplayNameLength()
-                && Text.plainLength(raw) >= 1;
+        int len = Text.plainLength(raw);
+        return len >= 1 && len <= config.getMaxDisplayNameLength();
     }
 
     /**
@@ -427,22 +420,22 @@ public final class PetService {
      * @return false 若可见字数超限、为空，或与同主人其它宠物重名
      */
     public boolean setName(PetData data, String raw) {
-        if (!isValidDisplayName(raw)) {
-            return false;
+        if (isValidDisplayName(raw)) {
+            String plain = Text.plain(raw);
+            PetData conflict = storage.byOwnerAndName(data.getOwnerId(), plain);
+            if (conflict != null && !conflict.getPetId().equals(data.getPetId())) {
+                return false;
+            }
+            String previous = data.getName();
+            data.setName(raw);
+            storage.reindexName(data, previous);
+            LivingEntity entity = findEntity(data);
+            if (entity != null) {
+                SchedulerUtil.run(entity, plugin, () -> applyOwnerVisual(entity, data));
+            }
+            return true;
         }
-        String plain = Text.plain(raw);
-        PetData conflict = storage.byOwnerAndName(data.getOwnerId(), plain);
-        if (conflict != null && !conflict.getPetId().equals(data.getPetId())) {
-            return false;
-        }
-        String previous = data.getName();
-        data.setName(raw);
-        storage.reindexName(data, previous);
-        LivingEntity entity = findEntity(data);
-        if (entity != null) {
-            SchedulerUtil.run(entity, plugin, () -> applyOwnerVisual(entity, data));
-        }
-        return true;
+        return false;
     }
 
     public boolean teleportPlayerToPet(Player player, PetData data) {

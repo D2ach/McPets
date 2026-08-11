@@ -2,16 +2,20 @@ package top.morndream.mcPets.util;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 支持 MiniMessage、& 颜色码、&#RRGGBB / #RRGGBB。
- * 不改写 {@code <gradient:#RRGGBB:...>} / {@code <#RRGGBB>} 内部的 hex，避免 GUI/前缀花括号解析失败。
+ * 支持 MiniMessage、&amp; 颜色码、&amp;#RRGGBB / #RRGGBB。
+ * 不改写 gradient / hex 标签内部的颜色值，避免 GUI/前缀解析失败。
  */
 public final class Text {
 
@@ -46,14 +50,59 @@ public final class Text {
         return LEGACY_AMP.deserialize(normalized);
     }
 
+    /**
+     * 占位符以独立 Component 插入，避免把渐变名字符串直接塞进外层颜色标签
+     * （例如 green 包裹 name）导致标签栈错乱、末尾出现字面量闭合标签。
+     */
     public static Component parse(String input, Map<String, String> placeholders) {
-        String value = input == null ? "" : input;
-        if (placeholders != null) {
-            for (Map.Entry<String, String> e : placeholders.entrySet()) {
-                value = value.replace("{" + e.getKey() + "}", e.getValue() == null ? "" : e.getValue());
+        if (placeholders == null || placeholders.isEmpty()) {
+            return parse(input);
+        }
+        final String original = input == null ? "" : input;
+        String template = original;
+        TagResolver.Builder resolvers = TagResolver.builder();
+        boolean any = false;
+        for (Map.Entry<String, String> e : placeholders.entrySet()) {
+            String key = e.getKey();
+            if (key.isEmpty()) {
+                continue;
+            }
+            String token = "{" + key + "}";
+            if (!template.contains(token)) {
+                continue;
+            }
+            // 用 Set 重载注册动态标签，避开 Placeholder.component 的 @TagPattern IDE 警告
+            String tag = "ph_" + key.toLowerCase(Locale.ROOT).replace('-', '_');
+            String value = e.getValue();
+            template = template.replace(token, "<" + tag + ">");
+            resolvers.resolver(inserting(tag, parse(value != null ? value : "")));
+            any = true;
+        }
+        if (!any) {
+            return parse(template);
+        }
+        TagResolver resolver = resolvers.build();
+        String normalized = normalize(template);
+        try {
+            return MINI.deserialize(normalized, resolver);
+        } catch (Exception ignored) {
+            try {
+                return MINI.deserialize(template, resolver);
+            } catch (Exception ignored2) {
+                // 最后回退：旧的字符串替换（可能仍有嵌套问题，但总比丢消息好）
+                String fallback = original;
+                for (Map.Entry<String, String> e : placeholders.entrySet()) {
+                    String value = e.getValue();
+                    fallback = fallback.replace("{" + e.getKey() + "}", value != null ? value : "");
+                }
+                return parse(fallback);
             }
         }
-        return parse(value);
+    }
+
+    /** 动态标签插入（走 Set 重载，避免自写匿名类触发 @NullMarked 形参警告）。 */
+    private static TagResolver inserting(String tagName, Component value) {
+        return TagResolver.resolver(Set.of(tagName), (_, _) -> Tag.selfClosingInserting(value));
     }
 
     /** 去掉颜色/格式后的可见纯文本（用于字数统计）。 */
@@ -109,7 +158,7 @@ public final class Text {
     }
 
     /**
-     * 只在 MiniMessage / HTML 风格标签之外做替换，避免动到 {@code <gradient:#aabbcc:...>}。
+     * 只在 MiniMessage / HTML 风格标签之外做替换，避免动到 gradient 标签内的 hex。
      */
     private static String replaceOutsideTags(String input, Pattern pattern,
                                              java.util.function.Function<Matcher, String> replacer) {
